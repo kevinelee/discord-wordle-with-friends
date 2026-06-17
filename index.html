@@ -550,6 +550,29 @@
     .cal-legend { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text3); margin-top: 8px; }
     .cal-legend-cell { width: 11px; height: 11px; border-radius: 2px; }
 
+    /* ── Valorant-style leaderboard ── */
+    .valo-table { width: 100%; border-collapse: collapse; }
+    .valo-table th {
+      font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--text3); padding: 8px 10px; text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .valo-table th.left { text-align: left; }
+    .valo-table td { border-bottom: 1px solid var(--border); padding: 0; }
+    .valo-table tr:last-child td { border-bottom: none; }
+    .valo-rank { font-size: 13px; font-weight: 700; color: var(--text3); }
+    .valo-rank.gold   { color: #B87800; }
+    .valo-rank.silver { color: #7A7A7A; }
+    .valo-rank.bronze { color: #8C4A20; }
+    .valo-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 600;
+    }
+    .valo-stat { font-size: 13px; font-weight: 500; text-align: center; padding: 10px 8px; }
+    .valo-highlight { background: color-mix(in srgb, var(--green) 7%, transparent); }
+    .valo-dim        { background: color-mix(in srgb, var(--red) 5%, transparent); }
+
     @media (max-width: 700px) {
       #leaderboard { grid-template-columns: 1fr; }
     }
@@ -572,14 +595,20 @@
   </header>
 
   <div class="tabs">
-    <button class="tab-btn active" onclick="showTab('board')"><i class="ti ti-trophy" aria-hidden="true"></i> Board</button>
+    <button class="tab-btn active" onclick="showTab('ranks')"><i class="ti ti-list-numbers" aria-hidden="true"></i> Leaderboard</button>
+    <button class="tab-btn" onclick="showTab('board')"><i class="ti ti-trophy" aria-hidden="true"></i> Board</button>
     <button class="tab-btn" onclick="showTab('log')"><i class="ti ti-calendar" aria-hidden="true"></i> History</button>
     <button class="tab-btn" onclick="showTab('add')"><i class="ti ti-plus" aria-hidden="true"></i> Log</button>
     <button class="tab-btn" onclick="showTab('players')"><i class="ti ti-users" aria-hidden="true"></i> Players</button>
   </div>
 
+  <!-- LEADERBOARD -->
+  <div id="tab-ranks" class="tab-panel active">
+    <div id="leaderboard-valo"></div>
+  </div>
+
   <!-- BOARD -->
-  <div id="tab-board" class="tab-panel active">
+  <div id="tab-board" class="tab-panel">
     <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:12px;">
       <div style="display:flex;align-items:center;gap:8px;">
         <span style="font-size:12px;color:var(--text3);">Sort by</span>
@@ -830,7 +859,7 @@ function fmtDate(d) {
 function inRoster(name) { return roster.includes(name.toLowerCase()); }
 
 function showTab(t) {
-  const ns = ['board', 'log', 'add', 'players'];
+  const ns = ['ranks', 'board', 'log', 'add', 'players'];
   document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', ns[i] === t));
   document.querySelectorAll('.tab-panel').forEach((p, i) => p.classList.toggle('active', ns[i] === t));
   if (t === 'log') { renderCalendar(); renderHistory(); }
@@ -885,7 +914,51 @@ function playerStats(results, allPuzzles) {
 }
 
 /* ── Render ── */
-function renderAll() { renderBoard(); renderHistory(); updateHistSelect(); renderCalendar(); }
+function renderAll() { renderLeaderboard(); renderBoard(); renderHistory(); updateHistSelect(); renderCalendar(); }
+
+function renderLeaderboard() {
+  const el = document.getElementById('leaderboard-valo');
+  if (!el) return;
+  const pm = {};
+  store.forEach(r => { (pm[r.player] = pm[r.player] || []).push(r); });
+  const names = Object.keys(pm);
+  if (!names.length) {
+    el.innerHTML = '<div class="empty-state"><i class="ti ti-trophy" aria-hidden="true"></i>No results yet.</div>';
+    return;
+  }
+  const allPuzzles = new Set(store.map(r => r.puzzle)).size;
+  const firsts = computeDailyFirsts();
+  const ranked = names
+    .map(n => ({ name: n, ...playerStats(pm[n], allPuzzles), firsts: firsts[n] || 0 }))
+    .sort((a, b) => (a.wAvg ?? 99) - (b.wAvg ?? 99));
+  const mid = Math.ceil(ranked.length / 2);
+
+  const rows = ranked.map((p, i) => {
+    const rankCls = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    const rowCls  = i < mid ? 'valo-highlight' : 'valo-dim';
+    const col = avatarColor(p.name);
+    const streakBadge = '';
+    const crownBadge  = p.firsts > 0 ? `<span class="badge badge-crown" style="margin-left:4px;">👑${p.firsts}</span>` : '';
+    return `<tr class="${rowCls}">
+      <td style="padding:10px 6px 10px 12px;width:20px;text-align:center;"><span class="valo-rank ${rankCls}">${i + 1}</span></td>
+      <td style="padding:10px 4px;width:30px;"><div class="valo-avatar" style="background:${col}20;color:${col}">${initials(p.name)}</div></td>
+      <td style="padding:10px 12px;font-size:13px;font-weight:500;">@${p.name}${streakBadge}${crownBadge}</td>
+      <td class="valo-stat">${p.wAvg !== null ? p.wAvg.toFixed(2) : '—'}</td>
+      <td class="valo-stat">${p.avg !== null ? p.avg.toFixed(2) : '—'}</td>
+      <td class="valo-stat">${p.best ?? '—'}</td>
+      <td class="valo-stat">${Math.round(p.total / allPuzzles * 100)}%</td>
+      <td class="valo-stat" style="${p.failed > 0 ? 'color:var(--red)' : ''}">${p.failed}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `<table class="valo-table">
+    <thead><tr>
+      <th colspan="3" class="left" style="padding-left:12px;">Player</th>
+      <th>Wtd Avg</th><th>Solve Avg</th><th>Best</th><th>Played</th><th>X/6</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
 
 function renderCalendar() {
   const area = document.getElementById('calendar-area');
@@ -1059,7 +1132,7 @@ function renderBoard() {
       </div>
       <div class="stat-strip">
         <div class="stat-cell${sortBy==='avg'?' stat-cell--active':''}"><div class="stat-val">${p.avg !== null ? p.avg.toFixed(2) : '—'}</div><div class="stat-lbl">solve avg</div></div>
-        <div class="stat-cell${sortBy==='total'?' stat-cell--active':''}"><div class="stat-val">${p.total}</div><div class="stat-lbl">played</div></div>
+        <div class="stat-cell${sortBy==='total'?' stat-cell--active':''}"><div class="stat-val">${Math.round(p.total / allPuzzles * 100)}%</div><div class="stat-lbl">${p.total}/${allPuzzles} played</div></div>
         <div class="stat-cell${sortBy==='solved'?' stat-cell--active':''}"><div class="stat-val">${p.solved}</div><div class="stat-lbl">solved</div></div>
         <div class="stat-cell${sortBy==='best'?' stat-cell--active':''}"><div class="stat-val">${p.best ?? '—'}</div><div class="stat-lbl">best guess</div></div>
         <div class="stat-cell${sortBy==='wAvg'?' stat-cell--active':''}"><div class="stat-val">${p.wAvg !== null ? p.wAvg.toFixed(2) : '—'}</div><div class="stat-lbl">wtd avg</div></div>
