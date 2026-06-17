@@ -1357,15 +1357,18 @@ function renderHistory() {
         <span class="hist-puzzle">#${r.puzzle}</span>
         <div class="avatar-sm" style="background:${col}20;color:${col}">${initials(r.player)}</div>
         <span class="hist-player">@${r.player}</span>
-        <button class="hist-score-btn${r.guesses === null ? ' fail' : ''}" onclick="editEntry('${r.id}')" title="Click to edit">${score}</button>
+        ${READ_ONLY
+          ? `<span class="hist-score-btn${r.guesses === null ? ' fail' : ''}">${score}</span>`
+          : `<button class="hist-score-btn${r.guesses === null ? ' fail' : ''}" onclick="editEntry('${r.id}')" title="Click to edit">${score}</button>`
+        }
         <span class="hist-wtd">${effectiveGuesses(r.guesses)}</span>
-        ${isConfirming
+        ${!READ_ONLY && (isConfirming
           ? `<div class="hist-del-confirm">
                <span>Delete?</span>
                <button class="btn-sm btn-danger" onclick="confirmDelete('${r.id}')">Yes, delete</button>
                <button class="btn-sm" onclick="cancelDelete()">Cancel</button>
              </div>`
-          : `<button class="btn-sm" style="margin-left:auto;" onclick="promptDelete('${r.id}')" aria-label="Delete"><i class="ti ti-trash" aria-hidden="true"></i></button>`
+          : `<button class="btn-sm" style="margin-left:auto;" onclick="promptDelete('${r.id}')" aria-label="Delete"><i class="ti ti-trash" aria-hidden="true"></i></button>`)
         }
       </div>`;
     }).join('');
@@ -1385,19 +1388,21 @@ function renderHistory() {
     </span>`;
 
     const isConfirmingDate = confirmingDeleteDate === date;
-    const dateHead = isConfirmingDate
-      ? `<div class="hist-group-head">
-           <span>${fmtDate(date)}</span>${streakField}
-           <div class="date-del-confirm">
-             <span>Delete all ${groups[date].length} entr${groups[date].length === 1 ? 'y' : 'ies'}?</span>
-             <button class="btn-sm btn-danger" onclick="confirmDeleteDate('${date}')">Yes, delete</button>
-             <button class="btn-sm" onclick="cancelDelete()">Cancel</button>
-           </div>
-         </div>`
-      : `<div class="hist-group-head">
-           <span>${fmtDate(date)}</span>${streakField}
-           <button class="btn-sm" style="margin-left:auto;opacity:.5;" onclick="promptDeleteDate('${date}')" title="Delete all entries for this date"><i class="ti ti-trash" aria-hidden="true"></i></button>
-         </div>`;
+    const dateHead = READ_ONLY
+      ? `<div class="hist-group-head"><span>${fmtDate(date)}</span>${streakField}</div>`
+      : isConfirmingDate
+        ? `<div class="hist-group-head">
+             <span>${fmtDate(date)}</span>${streakField}
+             <div class="date-del-confirm">
+               <span>Delete all ${groups[date].length} entr${groups[date].length === 1 ? 'y' : 'ies'}?</span>
+               <button class="btn-sm btn-danger" onclick="confirmDeleteDate('${date}')">Yes, delete</button>
+               <button class="btn-sm" onclick="cancelDelete()">Cancel</button>
+             </div>
+           </div>`
+        : `<div class="hist-group-head">
+             <span>${fmtDate(date)}</span>${streakField}
+             <button class="btn-sm" style="margin-left:auto;opacity:.5;" onclick="promptDeleteDate('${date}')" title="Delete all entries for this date"><i class="ti ti-trash" aria-hidden="true"></i></button>
+           </div>`;
     return `<div class="hist-group">${dateHead}${entries}</div>`;
   }).join('');
 }
