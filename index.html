@@ -551,6 +551,9 @@
     .cal-legend-cell { width: 11px; height: 11px; border-radius: 2px; }
 
     /* ── Valorant-style leaderboard ── */
+    .valo-table th.sortable { cursor: pointer; user-select: none; }
+    .valo-table th.sortable:hover { color: var(--text2); }
+    .valo-table th.sort-active { color: var(--text); background: var(--bg3); border-radius: 4px; }
     .valo-table { width: 100%; border-collapse: collapse; }
     .valo-table th {
       font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
@@ -746,6 +749,7 @@ const FAIL_WEIGHT = 7; // X/6
 const MISS_WEIGHT = 7; // didn't play
 let store = [];
 let roster = [];
+let avatars = {}; // lowercase name -> base64 data URL
 let pendingResults = [];
 let pendingNewPlayers = [];
 
@@ -756,17 +760,19 @@ const FILE_API = !!window.showOpenFilePicker;
 function saveToLS() {
   try { localStorage.setItem('wdl3_store', JSON.stringify(store)); } catch(e) {}
   try { localStorage.setItem('wdl3_roster', JSON.stringify(roster)); } catch(e) {}
+  try { localStorage.setItem('wdl3_avatars', JSON.stringify(avatars)); } catch(e) {}
 }
 function loadFromLS() {
   try { const d = localStorage.getItem('wdl3_store'); if (d) store = JSON.parse(d); } catch(e) {}
   try { const d = localStorage.getItem('wdl3_roster'); if (d) roster = JSON.parse(d); } catch(e) {}
+  try { const d = localStorage.getItem('wdl3_avatars'); if (d) avatars = JSON.parse(d); } catch(e) {}
 }
 
 async function saveToFile() {
   if (!fileHandle) return;
   try {
     const w = await fileHandle.createWritable();
-    await w.write(JSON.stringify({ store, roster }, null, 2));
+    await w.write(JSON.stringify({ store, roster, avatars }, null, 2));
     await w.close();
     updateFileStatus();
   } catch(e) { console.error('File write error:', e); }
@@ -781,6 +787,7 @@ async function loadFromFile() {
     if (d.store && Array.isArray(d.store)) store = d.store;
     else if (Array.isArray(d)) store = d;
     if (d.roster && Array.isArray(d.roster)) roster = d.roster;
+    if (d.avatars && typeof d.avatars === 'object') avatars = d.avatars;
     saveToLS();
     renderAll(); renderRoster(); updateHistSelect();
     updateFileStatus();
@@ -913,6 +920,64 @@ function playerStats(results, allPuzzles) {
   return { total, solved, failed, missed, avg, best, wAvg, wSum, dist, streak };
 }
 
+/* ── Leaderboard sort state ── */
+let valoSort = { col: 'wAvg', dir: 'asc' };
+function sortValo(col) {
+  valoSort.dir = valoSort.col === col && valoSort.dir === 'asc' ? 'desc' : 'asc';
+  valoSort.col = col;
+  renderLeaderboard();
+}
+function valoTh(label, col) {
+  const active = valoSort.col === col;
+  const arrow = active ? (valoSort.dir === 'asc' ? ' ↑' : ' ↓') : '';
+  return `<th class="sortable${active ? ' sort-active' : ''}" onclick="sortValo('${col}')">${label}${arrow}</th>`;
+}
+
+/* ── Avatar helpers ── */
+function avatarHTML(name, className, extraStyle = '') {
+  const key = name.toLowerCase();
+  if (avatars[key]) {
+    return `<div class="${className}" style="${extraStyle}"><img src="${avatars[key]}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;"></div>`;
+  }
+  const col = avatarColor(name);
+  return `<div class="${className}" style="background:${col}20;color:${col};${extraStyle}">${initials(name)}</div>`;
+}
+
+async function resizeToBase64(file, size = 72) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      const s = Math.min(img.width, img.height);
+      ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('load failed')); };
+    img.src = url;
+  });
+}
+
+async function uploadAvatar(name, input) {
+  const file = input.files[0];
+  if (!file) return;
+  try {
+    avatars[name.toLowerCase()] = await resizeToBase64(file);
+    await persistAll();
+    renderAll(); renderRoster();
+  } catch(e) { alert('Could not load image.'); }
+  input.value = '';
+}
+
+async function removeAvatar(name) {
+  delete avatars[name.toLowerCase()];
+  await persistAll();
+  renderAll(); renderRoster();
+}
+
 /* ── Render ── */
 function renderAll() { renderLeaderboard(); renderBoard(); renderHistory(); updateHistSelect(); renderCalendar(); }
 
@@ -930,18 +995,28 @@ function renderLeaderboard() {
   const firsts = computeDailyFirsts();
   const ranked = names
     .map(n => ({ name: n, ...playerStats(pm[n], allPuzzles), firsts: firsts[n] || 0 }))
-    .sort((a, b) => (a.wAvg ?? 99) - (b.wAvg ?? 99));
+    .sort((a, b) => {
+      let av, bv;
+      switch (valoSort.col) {
+        case 'wAvg':   av = a.wAvg ?? 99;  bv = b.wAvg ?? 99;  break;
+        case 'avg':    av = a.avg  ?? 99;  bv = b.avg  ?? 99;  break;
+        case 'best':   av = a.best ?? 99;  bv = b.best ?? 99;  break;
+        case 'played': av = a.total / allPuzzles; bv = b.total / allPuzzles; break;
+        case 'failed': av = a.failed; bv = b.failed; break;
+        default:       av = a.wAvg ?? 99;  bv = b.wAvg ?? 99;
+      }
+      return valoSort.dir === 'asc' ? av - bv : bv - av;
+    });
   const mid = Math.ceil(ranked.length / 2);
 
   const rows = ranked.map((p, i) => {
     const rankCls = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
     const rowCls  = i < mid ? 'valo-highlight' : 'valo-dim';
-    const col = avatarColor(p.name);
     const streakBadge = '';
     const crownBadge  = p.firsts > 0 ? `<span class="badge badge-crown" style="margin-left:4px;">👑${p.firsts}</span>` : '';
     return `<tr class="${rowCls}">
       <td style="padding:10px 6px 10px 12px;width:20px;text-align:center;"><span class="valo-rank ${rankCls}">${i + 1}</span></td>
-      <td style="padding:10px 4px;width:30px;"><div class="valo-avatar" style="background:${col}20;color:${col}">${initials(p.name)}</div></td>
+      <td style="padding:10px 4px;width:30px;">${avatarHTML(p.name, 'valo-avatar')}</td>
       <td style="padding:10px 12px;font-size:13px;font-weight:500;">@${p.name}${streakBadge}${crownBadge}</td>
       <td class="valo-stat">${p.wAvg !== null ? p.wAvg.toFixed(2) : '—'}</td>
       <td class="valo-stat">${p.avg !== null ? p.avg.toFixed(2) : '—'}</td>
@@ -954,7 +1029,7 @@ function renderLeaderboard() {
   el.innerHTML = `<table class="valo-table">
     <thead><tr>
       <th colspan="3" class="left" style="padding-left:12px;">Player</th>
-      <th>Wtd Avg</th><th>Solve Avg</th><th>Best</th><th>Played</th><th>X/6</th>
+      ${valoTh('Wtd Avg','wAvg')}${valoTh('Solve Avg','avg')}${valoTh('Best','best')}${valoTh('Played','played')}${valoTh('X/6','failed')}
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
@@ -1108,7 +1183,6 @@ function renderBoard() {
     const rankEl = i < 3
       ? `<span class="rank-badge">${['🥇','🥈','🥉'][i]}</span>`
       : `<span class="rank-badge"><span class="rank-num">${i + 1}</span></span>`;
-    const col = avatarColor(p.name);
     const distMax = Math.max(...p.dist, 1);
     const distLabels = ['1','2','3','4','5','6','X'];
     const distHtml = p.dist.map((cnt, j) => `
@@ -1121,7 +1195,7 @@ function renderBoard() {
     return `<div class="player-card">
       <div class="pc-top">
         ${rankEl}
-        <div class="avatar" style="background:${col}20;color:${col}">${initials(p.name)}</div>
+        ${avatarHTML(p.name, 'avatar')}
         <div class="pc-name-row">
           <div class="pc-name">@${p.name}</div>
           <div class="pc-sub">${p.wAvg !== null ? p.wAvg.toFixed(2) + ' wtd avg' : '—'}</div>
@@ -1231,11 +1305,10 @@ function parsePreview() {
   const rows = parsed.map(r => {
     const isDup = dupes.includes(r.player);
     const isNew = !isDup && !inRoster(r.player);
-    const col = avatarColor(r.player);
     const score = r.guesses === null ? 'X/6' : r.guesses + '/6';
     const scoreColor = r.guesses === null ? 'color:var(--red)' : '';
     return `<div class="preview-row">
-      <div class="avatar-sm" style="background:${col}20;color:${col}">${initials(r.player)}</div>
+      ${avatarHTML(r.player, 'avatar-sm')}
       <span class="preview-score" style="${scoreColor}">${score}</span>
       <span class="preview-name">@${r.player}</span>
       <div class="preview-actions">
@@ -1424,11 +1497,10 @@ function renderHistory() {
         </div>`;
       }
       const score = r.guesses === null ? 'X/6' : r.guesses + '/6';
-      const col = avatarColor(r.player);
       const isConfirming = confirmingDeleteId === r.id;
       return `<div class="hist-row">
         <span class="hist-puzzle">#${r.puzzle}</span>
-        <div class="avatar-sm" style="background:${col}20;color:${col}">${initials(r.player)}</div>
+        ${avatarHTML(r.player, 'avatar-sm')}
         <span class="hist-player">@${r.player}</span>
         ${READ_ONLY
           ? `<span class="hist-score-btn${r.guesses === null ? ' fail' : ''}">${score}</span>`
@@ -1515,6 +1587,7 @@ function importData(e) {
       if (d.store && Array.isArray(d.store)) store = d.store;
       else if (Array.isArray(d)) store = d;
       if (d.roster && Array.isArray(d.roster)) roster = d.roster;
+      if (d.avatars && typeof d.avatars === 'object') avatars = d.avatars;
       await persistAll();
       renderAll(); renderRoster(); updateHistSelect();
     } catch(err) { alert('Invalid JSON file.'); }
@@ -1529,10 +1602,17 @@ function renderRoster() {
   if (!roster.length) { list.innerHTML = ''; empty.style.display = ''; return; }
   empty.style.display = 'none';
   list.innerHTML = [...roster].sort().map(name => {
-    const col = avatarColor(name);
+    const hasPhoto = !!avatars[name];
+    const photoEl = hasPhoto
+      ? `<img src="${avatars[name]}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+      : avatarHTML(name, 'avatar-sm', 'width:22px;height:22px;font-size:9px;');
     return `<div class="roster-chip">
-      <div class="avatar-sm" style="background:${col}20;color:${col};width:22px;height:22px;font-size:9px;">${initials(name)}</div>
+      <label style="cursor:pointer;display:flex;align-items:center;gap:0;" title="${hasPhoto ? 'Change photo' : 'Upload photo'}">
+        ${photoEl}
+        <input type="file" accept="image/*" style="display:none" onchange="uploadAvatar('${name}',this)">
+      </label>
       @${name}
+      ${hasPhoto ? `<button class="roster-chip-remove" onclick="removeAvatar('${name}')" title="Remove photo" aria-label="Remove photo for ${name}"><i class="ti ti-photo-off" style="font-size:12px;" aria-hidden="true"></i></button>` : ''}
       <button class="roster-chip-remove" onclick="removeRosterPlayer('${name}')" aria-label="Remove ${name}"><i class="ti ti-x" style="font-size:12px;" aria-hidden="true"></i></button>
     </div>`;
   }).join('');
