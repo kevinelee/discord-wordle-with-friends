@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wordle Tracker</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #ffffff;
+      --bg2:       #f7f7f6;
+      --bg3:       #efeeec;
+      --border:    rgba(0,0,0,0.09);
+      --border2:   rgba(0,0,0,0.15);
+      --text:      #1a1a18;
+      --text2:     #6b6b67;
+      --text3:     #9b9b96;
+      --green:     #1a7a56;
+      --green-bg:  #e8f5ef;
+      --red:       #c0392b;
+      --red-bg:    #fdf0ef;
+      --amber:     #8c4a00;
+      --amber-bg:  #fdf3e3;
+      --blue:      #1a5fa8;
+      --blue-bg:   #e8f0fc;
+      --radius:    8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:        #18181a;
+        --bg2:       #222224;
+        --bg3:       #2c2c2e;
+        --border:    rgba(255,255,255,0.08);
+        --border2:   rgba(255,255,255,0.14);
+        --text:      #f0f0ed;
+        --text2:     #9a9a95;
+        --text3:     #686863;
+        --green:     #3ecf8e;
+        --green-bg:  #0d2e21;
+        --red:       #e05c5c;
+        --red-bg:    #2e1515;
+        --amber:     #e8a430;
+        --amber-bg:  #2a1e06;
+        --blue:      #5b9cf6;
+        --blue-bg:   #0e1e3a;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .app-shell {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 24px 24px 60px;
+    }
+
+    /* ── Header ── */
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .app-title {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      flex: 1;
+    }
+    .file-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text2);
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: background .15s, border-color .15s, transform .1s, box-shadow .15s;
+      white-space: nowrap;
+      max-width: 200px;
+      overflow: hidden;
+    }
+    .file-chip:hover { background: var(--bg3); border-color: var(--border2); box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .file-chip:active { transform: scale(.97); }
+    .file-chip .dot {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+      background: var(--text3);
+    }
+    .file-chip .dot.linked { background: var(--green); }
+    .file-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--bg2);
+      border-radius: var(--radius-lg);
+      padding: 4px;
+      margin-bottom: 24px;
+    }
+    .tab-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      border-radius: var(--radius);
+      padding: 7px 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: background .15s, color .15s, box-shadow .15s, transform .1s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: var(--text); background: rgba(0,0,0,.04); }
+    .tab-btn:active { transform: scale(.96); }
+    .tab-btn.active {
+      background: var(--bg);
+      color: var(--text);
+      box-shadow: 0 1px 3px var(--border2);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeUp .2s ease; }
+
+    /* ── Metrics ── */
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .metric {
+      background: var(--bg2);
+      border-radius: var(--radius-lg);
+      padding: 14px 14px 12px;
+      transition: background .15s, box-shadow .2s, transform .2s;
+      animation: fadeUp .2s ease both;
+    }
+    .metric:nth-child(2) { animation-delay: .04s; }
+    .metric:nth-child(3) { animation-delay: .08s; }
+    .metric:nth-child(4) { animation-delay: .12s; }
+    .metric:hover { background: var(--bg3); box-shadow: 0 2px 10px rgba(0,0,0,.06); transform: translateY(-1px); }
+    .metric-lbl { font-size: 11px; color: var(--text3); margin-bottom: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+    .metric-val { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+
+    /* ── Player cards ── */
+    #leaderboard {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .player-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 14px 16px;
+      background: var(--bg);
+      transition: border-color .2s, box-shadow .2s, transform .2s;
+      animation: fadeUp .25s ease both;
+    }
+    .player-card:nth-child(2)  { animation-delay: .04s; }
+    .player-card:nth-child(3)  { animation-delay: .08s; }
+    .player-card:nth-child(4)  { animation-delay: .12s; }
+    .player-card:nth-child(5)  { animation-delay: .16s; }
+    .player-card:nth-child(6)  { animation-delay: .20s; }
+    .player-card:nth-child(n+7){ animation-delay: .24s; }
+    .player-card:hover { border-color: var(--border2); box-shadow: 0 4px 16px rgba(0,0,0,.07); transform: translateY(-1px); }
+
+    .pc-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .rank-badge {
+      width: 28px;
+      text-align: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .rank-num {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text3);
+    }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600; flex-shrink: 0;
+      letter-spacing: .02em;
+    }
+    .pc-name-row { flex: 1; min-width: 0; }
+    .pc-name { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pc-sub { font-size: 12px; color: var(--text3); margin-top: 1px; }
+    .pc-badges { display: flex; gap: 5px; }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 99px;
+      white-space: nowrap;
+    }
+    .badge-streak { background: var(--green-bg); color: var(--green); }
+    .badge-crown  { background: var(--amber-bg); color: var(--amber); }
+    .badge-new    { background: var(--amber-bg); color: var(--amber); }
+    .badge-known  { background: var(--green-bg); color: var(--green); }
+    .badge-dup    { background: var(--bg3); color: var(--text3); }
+
+    .stat-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      padding-left: 40px;
+      margin-bottom: 12px;
+    }
+    .stat-cell {
+      background: var(--bg2);
+      border-radius: var(--radius);
+      padding: 7px 4px;
+      text-align: center;
+      transition: background .2s, box-shadow .2s;
+    }
+    .stat-cell--active {
+      background: var(--green);
+      box-shadow: 0 0 0 2px var(--green);
+    }
+    .stat-cell--active .stat-val { color: #fff; }
+    .stat-cell--active .stat-lbl { color: rgba(255,255,255,.75); }
+    .stat-val { font-size: 13px; font-weight: 600; }
+    .stat-lbl { font-size: 10px; color: var(--text3); margin-top: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: .03em; }
+
+    .dist-section { padding-left: 40px; }
+    .dist-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .dist-num  { width: 12px; text-align: center; font-size: 12px; color: var(--text3); }
+    .dist-track { flex: 1; background: var(--bg3); border-radius: 99px; height: 10px; overflow: hidden; }
+    .dist-fill  { height: 100%; border-radius: 99px; background: var(--text3); }
+    .dist-fill.best { background: var(--green); }
+    .dist-fill.fail { background: var(--red); }
+    .dist-count { min-width: 18px; text-align: right; font-size: 12px; font-weight: 600; color: var(--text2); }
+
+    /* ── Forms ── */
+    label.field { display: block; }
+    .field-label { font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 5px; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    input[type=text], input[type=number], input[type=date], select, textarea {
+      display: block;
+      width: 100%;
+      background: var(--bg2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 11px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .2s, background .2s, box-shadow .2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--border2);
+      background: var(--bg);
+      box-shadow: 0 0 0 3px rgba(0,0,0,.05);
+    }
+    textarea { resize: vertical; min-height: 108px; font-family: monospace; font-size: 12.5px; line-height: 1.55; }
+
+    .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .form-row .field { flex: 1; min-width: 140px; }
+    .form-row .field-sm { width: 160px; flex-shrink: 0; }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background .15s, border-color .15s, opacity .15s, transform .1s, box-shadow .15s;
+      white-space: nowrap;
+    }
+    button:hover { background: var(--bg3); border-color: var(--border2); }
+    button:active { transform: scale(.97); }
+    button.btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+    button.btn-primary:hover { opacity: .85; }
+    button.btn-primary:active { opacity: .75; transform: scale(.97); }
+    button.btn-danger { color: var(--red); }
+    button.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    .feedback {
+      font-size: 13px;
+      min-height: 20px;
+      margin-top: 8px;
+      transition: color .2s;
+      animation: fadeIn .2s ease;
+    }
+    .warn-banner { animation: slideDown .2s ease; }
+    .badge { transition: opacity .15s, transform .15s; }
+    .badge:hover { opacity: .8; transform: scale(.96); }
+
+    /* ── Preview box ── */
+    .preview-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 12px 14px;
+      margin-top: 12px;
+    }
+    .preview-meta { font-size: 12px; color: var(--text3); margin-bottom: 10px; font-weight: 500; }
+    .preview-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .preview-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .preview-score { font-size: 13px; font-weight: 600; min-width: 36px; }
+    .preview-name  { font-size: 13px; color: var(--text2); flex: 1; }
+    .preview-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+
+    /* ── History ── */
+    .hist-group { margin-bottom: 24px; }
+    .hist-group-head {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hist-group-head .date-del-confirm {
+      display: flex; align-items: center; gap: 6px;
+      margin-left: auto; text-transform: none; letter-spacing: 0;
+      font-size: 12px; color: var(--text2);
+      animation: fadeIn .15s ease;
+    }
+    .hist-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 6px;
+      border-bottom: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: background .15s;
+    }
+    .hist-row:last-child { border-bottom: none; }
+    .hist-row:hover { background: var(--bg2); }
+    .hist-puzzle { font-size: 12px; color: var(--text3); width: 44px; flex-shrink: 0; }
+    .hist-player { flex: 1; font-size: 13px; }
+    .hist-score-btn {
+      font-size: 13px; font-weight: 600; min-width: 36px;
+      background: none; border: 1px solid transparent; border-radius: var(--radius);
+      padding: 2px 6px; cursor: pointer; color: inherit; font-family: inherit;
+      transition: background .15s, border-color .15s, transform .1s;
+    }
+    .hist-score-btn:hover { background: var(--bg3); border-color: var(--border2); }
+    .hist-score-btn:active { transform: scale(.93); }
+    .hist-score-btn.fail { color: var(--red); }
+    .hist-del-confirm {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--text2); margin-left: auto;
+      animation: fadeIn .15s ease;
+    }
+    .hist-edit-row { animation: slideDown .18s ease; }
+    .preview-box { animation: fadeUp .18s ease; }
+    .hist-wtd    { font-size: 12px; color: var(--text3); min-width: 20px; text-align: right; }
+
+    /* ── Roster ── */
+    .roster-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .roster-chip {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 5px 8px 5px 10px;
+      font-size: 13px;
+      transition: border-color .15s, background .15s, transform .15s;
+      animation: fadeIn .2s ease both;
+    }
+    .roster-chip:hover { border-color: var(--border2); background: var(--bg3); }
+    .roster-chip-remove {
+      background: none;
+      border: none;
+      padding: 0;
+      color: var(--text3);
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      display: flex;
+      transition: color .15s, transform .15s;
+    }
+    .roster-chip-remove:hover { color: var(--red); background: none; border: none; transform: scale(1.2); }
+
+    /* ── Inline edit row ── */
+    .hist-edit-row {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-lg);
+      padding: 10px 12px;
+      margin: 4px 0;
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .hist-edit-row .field-label { font-size: 11px; }
+    .hist-edit-row input, .hist-edit-row select {
+      padding: 5px 8px;
+      font-size: 12px;
+    }
+    .hist-edit-row .ef-player { width: 130px; }
+    .hist-edit-row .ef-date   { width: 140px; }
+    .hist-edit-row .ef-score  { width: 80px; }
+    .hist-edit-row .ef-streak { width: 70px; }
+
+    /* ── Warning banner ── */
+    .warn-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      background: var(--amber-bg);
+      border: 1px solid rgba(140,74,0,.18);
+      border-radius: var(--radius);
+      padding: 9px 12px;
+      font-size: 12px;
+      color: var(--amber);
+      margin-bottom: 10px;
+    }
+    .warn-banner i { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Misc ── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+    .section-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+    .empty-state { text-align: center; color: var(--text3); padding: 3rem 0; font-size: 14px; }
+    .empty-state i { font-size: 28px; display: block; margin-bottom: 8px; }
+
+    .avatar-sm {
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 600; flex-shrink: 0;
+    }
+
+    /* file status bar at bottom */
+    .status-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      padding: 6px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--text3);
+      z-index: 10;
+    }
+    .status-bar .dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--text3); flex-shrink: 0;
+    }
+    .status-bar .dot.linked { background: var(--green); }
+    .status-bar a { color: var(--blue); text-decoration: none; cursor: pointer; }
+    .status-bar a:hover { text-decoration: underline; }
+
+    .new-player-note {
+      font-size: 12px;
+      color: var(--amber);
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* ── Activity calendar ── */
+    :root {
+      --cal-empty: var(--bg3);
+      --cal-l1: #aee8b8;
+      --cal-l2: #57bb75;
+      --cal-l3: #2d9e50;
+      --cal-l4: #1a6e35;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --cal-l1: #0e4429;
+        --cal-l2: #006d32;
+        --cal-l3: #26a641;
+        --cal-l4: #39d353;
+      }
+    }
+    .cal-wrap { overflow-x: auto; padding-bottom: 4px; margin-bottom: 20px; }
+    .cal-inner { display: inline-flex; align-items: flex-start; gap: 0; }
+    .cal-day-labels {
+      display: flex; flex-direction: column; gap: 3px;
+      padding-top: 22px; margin-right: 5px; flex-shrink: 0;
+    }
+    .cal-day-lbl { width: 12px; height: 13px; font-size: 10px; color: var(--text3); line-height: 13px; }
+    .cal-weeks { display: flex; gap: 3px; }
+    .cal-week { display: flex; flex-direction: column; gap: 3px; }
+    .cal-month-lbl { height: 18px; font-size: 10px; color: var(--text3); white-space: nowrap; line-height: 18px; }
+    .cal-cell {
+      width: 13px; height: 13px; border-radius: 2px;
+      cursor: default; flex-shrink: 0;
+      transition: opacity .12s, transform .1s;
+    }
+    .cal-cell.clickable { cursor: pointer; }
+    .cal-cell.clickable:hover { opacity: .75; transform: scale(1.25); }
+    .cal-cell.today { outline: 1.5px solid var(--text2); outline-offset: -1px; }
+    .cal-legend { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text3); margin-top: 8px; }
+    .cal-legend-cell { width: 11px; height: 11px; border-radius: 2px; }
+
+    @media (max-width: 700px) {
+      #leaderboard { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .metric-row { grid-template-columns: repeat(2, 1fr); }
+      .stat-strip { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <header class="app-header">
+    <span class="app-title">Wordle tracker</span>
+    <button class="file-chip" id="file-chip" onclick="handleFileChipClick()" title="Click to link a data file">
+      <span class="dot" id="file-dot"></span>
+      <span id="file-chip-label">No file linked</span>
+    </button>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('board')"><i class="ti ti-trophy" aria-hidden="true"></i> Board</button>
+    <button class="tab-btn" onclick="showTab('log')"><i class="ti ti-calendar" aria-hidden="true"></i> History</button>
+    <button class="tab-btn" onclick="showTab('add')"><i class="ti ti-plus" aria-hidden="true"></i> Log</button>
+    <button class="tab-btn" onclick="showTab('players')"><i class="ti ti-users" aria-hidden="true"></i> Players</button>
+  </div>
+
+  <!-- BOARD -->
+  <div id="tab-board" class="tab-panel active">
+    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;color:var(--text3);">Sort by</span>
+        <select id="board-sort" onchange="renderBoard()" style="font-size:12px;padding:5px 10px;">
+          <option value="wAvg">Wtd avg (best)</option>
+          <option value="avg">Solve avg (best)</option>
+          <option value="best">Best score</option>
+          <option value="wSum">Wtd total (lowest)</option>
+          <option value="total">Most played</option>
+          <option value="solved">Most solved</option>
+          <option value="failed">Fewest X/6</option>
+          <option value="missed">Fewest missed</option>
+          <option value="firsts">Most 1st place</option>
+        </select>
+      </div>
+    </div>
+    <div class="metric-row" id="metric-row"></div>
+    <div id="leaderboard"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="tab-log" class="tab-panel">
+    <div id="calendar-area" style="margin-bottom:20px;"></div>
+    <div class="form-row" style="margin-bottom:12px;">
+      <div class="field">
+        <div class="field-label">Player</div>
+        <select id="hist-player" onchange="renderHistory()">
+          <option value="__all__">All players</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="field-label">Month</div>
+        <select id="hist-month" onchange="renderHistory()">
+          <option value="__all__">All time</option>
+        </select>
+      </div>
+      <div class="field-sm">
+        <div class="field-label">Sort</div>
+        <select id="hist-sort" onchange="renderHistory()">
+          <option value="date-asc">Oldest first</option>
+          <option value="date-desc">Newest first</option>
+          <option value="puzzle-desc">Puzzle ↓</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:14px;">
+      <button class="btn-sm" onclick="exportFiltered()" title="Export what's currently shown"><i class="ti ti-download" aria-hidden="true"></i> Export view</button>
+    </div>
+    <div id="history-area"></div>
+  </div>
+
+  <!-- LOG -->
+  <div id="tab-add" class="tab-panel">
+    <textarea id="paste-area" placeholder="Paste the Discord Wordle activity message here…&#10;&#10;Your group is on a 52 day streak! 🔥 Here are yesterday's results:&#10;👑 4/6: @yoonasenpaii @supernothing&#10;X/6: @hannita :) @bingebonge" style="margin-bottom:14px;" onpaste="setTimeout(()=>{autoDetectDate(this.value);parsePreview();},0)"></textarea>
+
+    <div class="form-row" style="margin-bottom:4px;">
+      <div class="field field-sm">
+        <div class="field-label">Puzzle # <span style="font-weight:400;color:var(--text3);">(auto if blank)</span></div>
+        <input type="number" id="puzzle-num" placeholder="e.g. 1234">
+      </div>
+    </div>
+
+    <div id="preview-area"></div>
+
+    <div class="btn-row" style="margin-top:12px;">
+      <button onclick="parsePreview()"><i class="ti ti-eye" aria-hidden="true"></i> Preview</button>
+      <button class="btn-primary" onclick="commitResults()" id="commit-btn" style="display:none"><i class="ti ti-check" aria-hidden="true"></i> Confirm & save</button>
+      <button onclick="clearAdd()"><i class="ti ti-x" aria-hidden="true"></i> Clear</button>
+    </div>
+    <div class="feedback" id="feedback"></div>
+
+    <hr class="divider">
+
+    <p class="section-title">Manual entry</p>
+    <div style="display:grid;grid-template-columns:1fr 150px 120px auto;gap:10px;align-items:end;">
+      <div>
+        <div class="field-label">Player</div>
+        <input type="text" id="m-player" placeholder="username" list="roster-datalist">
+      </div>
+      <div>
+        <div class="field-label">Date</div>
+        <input type="date" id="m-date">
+      </div>
+      <div>
+        <div class="field-label">Score (1–6 or X)</div>
+        <input type="text" id="m-guesses" placeholder="4">
+      </div>
+      <button onclick="manualAdd()" style="height:38px;"><i class="ti ti-plus" aria-hidden="true"></i></button>
+    </div>
+    <div class="feedback" id="manual-feedback"></div>
+    <datalist id="roster-datalist"></datalist>
+
+    <hr class="divider">
+
+    <div class="btn-row" data-edit-only>
+      <button onclick="exportData()"><i class="ti ti-download" aria-hidden="true"></i> Export all data</button>
+      <label><button onclick="this.parentElement.querySelector('input').click()"><i class="ti ti-upload" aria-hidden="true"></i> Import JSON</button><input type="file" accept=".json" style="display:none" onchange="importData(event)"></label>
+      <button class="btn-danger" onclick="if(confirm('Delete ALL data? This cannot be undone.')){store=[];persistAll();renderAll();}">Reset all data</button>
+    </div>
+
+    <hr class="divider" style="margin:20px 0;" data-edit-only>
+
+    <div data-edit-only>
+      <div style="margin-bottom:8px;font-size:13px;font-weight:600;">Deploy to Vercel</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:12px;">Downloads <code style="font-size:11px;background:var(--bg2);padding:1px 5px;border-radius:4px;">data.json</code> — commit it alongside <code style="font-size:11px;background:var(--bg2);padding:1px 5px;border-radius:4px;">index.html</code> to your GitHub repo to update the live site.</p>
+      <button onclick="exportForDeploy()" style="background:var(--blue-bg);color:var(--blue);border:1px solid currentColor;"><i class="ti ti-brand-vercel" aria-hidden="true"></i> Export data.json for deploy</button>
+    </div>
+  </div>
+
+  <!-- PLAYERS -->
+  <div id="tab-players" class="tab-panel">
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">The parser matches <code style="font-size:12px;background:var(--bg2);padding:1px 5px;border-radius:4px;">@mentions</code> against this list. Unknown names are flagged for review when you preview a paste.</p>
+    <div style="display:flex;gap:8px;">
+      <input type="text" id="add-player-input" placeholder="Discord username (no @)" style="flex:1;" onkeydown="if(event.key==='Enter')addRosterPlayer()">
+      <button class="btn-primary" onclick="addRosterPlayer()"><i class="ti ti-plus" aria-hidden="true"></i> Add</button>
+    </div>
+    <div class="feedback" id="roster-feedback"></div>
+    <div class="roster-grid" id="roster-list"></div>
+    <p id="roster-empty" class="empty-state" style="display:none;"><i class="ti ti-users" aria-hidden="true"></i>No players yet.</p>
+  </div>
+
+</div>
+
+<!-- Status bar -->
+<div class="status-bar" id="status-bar">
+  <span class="dot" id="sb-dot"></span>
+  <span id="sb-text">Browser storage only</span>
+  <span style="flex:1"></span>
+  <a onclick="handleFileChipClick()" id="sb-action">Link a file</a>
+</div>
+
+<script>
+const COLORS = ['#378ADD','#1D9E75','#D85A30','#D4537E','#BA7517','#7F77DD','#639922'];
+const FAIL_WEIGHT = 7; // X/6
+const MISS_WEIGHT = 7; // didn't play
+let store = [];
+let roster = [];
+let pendingResults = [];
+let pendingNewPlayers = [];
+
+/* ── Persistence ── */
+let fileHandle = null;
+const FILE_API = !!window.showOpenFilePicker;
+
+function saveToLS() {
+  try { localStorage.setItem('wdl3_store', JSON.stringify(store)); } catch(e) {}
+  try { localStorage.setItem('wdl3_roster', JSON.stringify(roster)); } catch(e) {}
+}
+function loadFromLS() {
+  try { const d = localStorage.getItem('wdl3_store'); if (d) store = JSON.parse(d); } catch(e) {}
+  try { const d = localStorage.getItem('wdl3_roster'); if (d) roster = JSON.parse(d); } catch(e) {}
+}
+
+async function saveToFile() {
+  if (!fileHandle) return;
+  try {
+    const w = await fileHandle.createWritable();
+    await w.write(JSON.stringify({ store, roster }, null, 2));
+    await w.close();
+    updateFileStatus();
+  } catch(e) { console.error('File write error:', e); }
+}
+
+async function loadFromFile() {
+  if (!fileHandle) return;
+  try {
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+    const d = JSON.parse(text);
+    if (d.store && Array.isArray(d.store)) store = d.store;
+    else if (Array.isArray(d)) store = d;
+    if (d.roster && Array.isArray(d.roster)) roster = d.roster;
+    saveToLS();
+    renderAll(); renderRoster(); updateHistSelect();
+    updateFileStatus();
+  } catch(e) { console.error('File read error:', e); }
+}
+
+async function persistAll() {
+  saveToLS();
+  await saveToFile();
+}
+
+async function handleFileChipClick() {
+  if (!FILE_API) {
+    alert('The File System API is not supported in this browser.\nUse Chrome or Edge to enable auto-save to a file.\n\nYour data is still saved to browser localStorage.');
+    return;
+  }
+  if (fileHandle) {
+    const opts = ['Load from this file', 'Switch to a different file', 'Save a new copy'];
+    const choice = prompt(`Current file: ${fileHandle.name}\n\n1. ${opts[0]}\n2. ${opts[1]}\n3. ${opts[2]}\n\nType 1, 2, or 3:`);
+    if (choice === '1') { await loadFromFile(); return; }
+    if (choice === '3') { await saveNewFile(); return; }
+  }
+  try {
+    [fileHandle] = await window.showOpenFilePicker({
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+    });
+    await loadFromFile();
+  } catch(e) { /* cancelled */ }
+}
+
+async function saveNewFile() {
+  if (!FILE_API) return;
+  try {
+    fileHandle = await window.showSaveFilePicker({
+      suggestedName: 'wordle-tracker.json',
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+    });
+    await saveToFile();
+  } catch(e) { /* cancelled */ }
+}
+
+function updateFileStatus() {
+  const dot = document.getElementById('file-dot');
+  const lbl = document.getElementById('file-chip-label');
+  const sbDot = document.getElementById('sb-dot');
+  const sbText = document.getElementById('sb-text');
+  const sbAction = document.getElementById('sb-action');
+  if (fileHandle) {
+    dot.className = 'dot linked';
+    lbl.textContent = fileHandle.name;
+    sbDot.className = 'dot linked';
+    sbText.textContent = `Auto-saving to ${fileHandle.name}`;
+    sbAction.textContent = 'Change file';
+  } else {
+    dot.className = 'dot';
+    lbl.textContent = 'No file linked';
+    sbDot.className = 'dot';
+    sbText.textContent = FILE_API ? 'Browser storage — changes not saved to disk' : 'Browser storage only';
+    sbAction.textContent = FILE_API ? 'Link a file' : '';
+    sbAction.style.display = FILE_API ? '' : 'none';
+  }
+}
+
+/* ── Helpers ── */
+function uid() { return Math.random().toString(36).slice(2); }
+function initials(n) { return n.trim().split(/[\s_\-\.]+/).map(w => w[0] || '').join('').toUpperCase().slice(0, 2) || '?'; }
+function avatarColor(n) { let h = 0; for (let c of n) h = (h * 31 + c.charCodeAt(0)) & 0xffffff; return COLORS[Math.abs(h) % COLORS.length]; }
+function today() { return new Date().toISOString().slice(0, 10); }
+function yesterday() { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().slice(0, 10); }
+function fmtDate(d) {
+  if (!d) return '—';
+  const [y, m, day] = d.split('-');
+  const dt = new Date(+y, +m - 1, +day);
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function inRoster(name) { return roster.includes(name.toLowerCase()); }
+
+function showTab(t) {
+  const ns = ['board', 'log', 'add', 'players'];
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', ns[i] === t));
+  document.querySelectorAll('.tab-panel').forEach((p, i) => p.classList.toggle('active', ns[i] === t));
+  if (t === 'log') { renderCalendar(); renderHistory(); }
+  if (t === 'players') renderRoster();
+  if (t === 'add') initDateDefaults();
+}
+
+let detectedDate = null;
+let pendingDate  = null; // single source of truth for date on current pending paste
+
+function initDateDefaults() {
+  const md = document.getElementById('m-date');
+  if (!md.value) md.value = today();
+}
+
+function nextPuzzleNum() {
+  if (!store.length) return null;
+  return Math.max(...store.map(r => r.puzzle)) + 1;
+}
+
+function effectiveGuesses(g) { return g === null ? FAIL_WEIGHT : g; }
+
+function computeDailyFirsts() {
+  const firsts = {};
+  [...new Set(store.map(r => r.puzzle))].forEach(p => {
+    const solvers = store.filter(r => r.puzzle === p && r.guesses !== null);
+    if (!solvers.length) return;
+    const best = Math.min(...solvers.map(r => r.guesses));
+    solvers.filter(r => r.guesses === best).forEach(r => {
+      firsts[r.player] = (firsts[r.player] || 0) + 1;
+    });
+  });
+  return firsts;
+}
+
+function playerStats(results, allPuzzles) {
+  const total    = results.length;
+  const solved   = results.filter(r => r.guesses !== null).length;
+  const failed   = results.filter(r => r.guesses === null).length;
+  const missed   = allPuzzles - total;
+  const sumGuesses = results.filter(r => r.guesses !== null).reduce((a, r) => a + r.guesses, 0);
+  const avg      = solved ? (sumGuesses / solved) : null;
+  const best     = solved ? Math.min(...results.filter(r => r.guesses !== null).map(r => r.guesses)) : null;
+  const wSum     = results.reduce((a, r) => a + effectiveGuesses(r.guesses), 0) + (missed * MISS_WEIGHT);
+  const wAvg     = allPuzzles > 0 ? (wSum / allPuzzles) : null;
+  const dist     = [0,0,0,0,0,0,0];
+  results.forEach(r => { dist[r.guesses !== null ? r.guesses - 1 : 6]++; });
+  const sorted   = [...results].sort((a, b) => b.puzzle - a.puzzle);
+  let streak = 0;
+  for (const r of sorted) { if (r.guesses !== null) streak++; else break; }
+  return { total, solved, failed, missed, avg, best, wAvg, wSum, dist, streak };
+}
+
+/* ── Render ── */
+function renderAll() { renderBoard(); renderHistory(); updateHistSelect(); renderCalendar(); }
+
+function renderCalendar() {
+  const area = document.getElementById('calendar-area');
+  if (!area) return;
+  const validDates = store.map(r => r.date).filter(Boolean).sort();
+  if (!validDates.length) { area.innerHTML = ''; return; }
+
+  const todayD = new Date(); todayD.setHours(0,0,0,0);
+  const firstD = new Date(validDates[0] + 'T00:00:00');
+
+  // Build count map: date string -> number of entries
+  const counts = {};
+  store.forEach(r => { if (r.date) counts[r.date] = (counts[r.date] || 0) + 1; });
+
+  // Start on the Sunday of the week containing firstD
+  const startD = new Date(firstD);
+  startD.setDate(startD.getDate() - startD.getDay());
+
+  // Build week columns: array of arrays of 7 date-strings (or null for padding)
+  const weeks = [];
+  const cur = new Date(startD);
+  while (cur <= todayD) {
+    const week = [];
+    for (let i = 0; i < 7; i++) {
+      week.push(cur <= todayD ? cur.toISOString().slice(0,10) : null);
+      cur.setDate(cur.getDate() + 1);
+    }
+    weeks.push(week);
+  }
+  // fill last partial week
+  const last = weeks[weeks.length - 1];
+  while (last.length < 7) last.push(null);
+
+  const todayStr = todayD.toISOString().slice(0,10);
+  const firstStr = firstD.toISOString().slice(0,10);
+
+  function cellBg(ds) {
+    if (!ds || ds < firstStr) return 'transparent';
+    const c = counts[ds] || 0;
+    if (c === 0) return 'var(--cal-empty)';
+    if (c <= 2)  return 'var(--cal-l1)';
+    if (c <= 4)  return 'var(--cal-l2)';
+    if (c <= 6)  return 'var(--cal-l3)';
+    return 'var(--cal-l4)';
+  }
+
+  // Month label: show when first day of a new month appears in this week
+  function monthLbl(week, wi) {
+    const first = week.find(d => d && d >= firstStr);
+    if (!first) return '';
+    const mo = first.slice(5,7), yr = first.slice(0,4);
+    if (wi === 0) return new Date(+yr, +mo-1, 1).toLocaleDateString('en-US', {month:'short'});
+    const prev = weeks[wi-1].find(d => d && d >= firstStr);
+    if (!prev || prev.slice(5,7) !== mo) {
+      return new Date(+yr, +mo-1, 1).toLocaleDateString('en-US', {month:'short'});
+    }
+    return '';
+  }
+
+  const DAY_LBLS = ['S','M','T','W','T','F','S'];
+
+  const weeksHtml = weeks.map((week, wi) => {
+    const lbl = monthLbl(week, wi);
+    const cells = week.map((ds, di) => {
+      const bg = cellBg(ds);
+      if (bg === 'transparent') return `<div class="cal-cell" style="background:transparent"></div>`;
+      const isMissing = ds && ds >= firstStr && !counts[ds];
+      const isToday   = ds === todayStr;
+      const count     = counts[ds] || 0;
+      const tip       = ds ? `${fmtDate(ds)}${count > 0 ? ' · ' + count + ' entr' + (count===1?'y':'ies') : ' · missing'}` : '';
+      return `<div class="cal-cell${ds ? ' clickable' : ''}${isToday ? ' today' : ''}"
+        style="background:${bg};${isMissing ? 'border:1px solid var(--border2);' : ''}"
+        title="${tip}"
+        ${ds ? `onclick="filterToDate('${ds}')"` : ''}></div>`;
+    }).join('');
+    return `<div class="cal-week"><div class="cal-month-lbl">${lbl}</div>${cells}</div>`;
+  }).join('');
+
+  const dayLabels = DAY_LBLS.map((l,i) =>
+    `<div class="cal-day-lbl">${i % 2 === 1 ? l : ''}</div>`
+  ).join('');
+
+  area.innerHTML = `
+    <div class="cal-wrap">
+      <div class="cal-inner">
+        <div class="cal-day-labels">${dayLabels}</div>
+        <div class="cal-weeks">${weeksHtml}</div>
+      </div>
+      <div class="cal-legend">
+        <span>Missing</span>
+        <div class="cal-legend-cell" style="background:var(--cal-empty);border:1px solid var(--border2);"></div>
+        <div class="cal-legend-cell" style="background:var(--cal-l1);"></div>
+        <div class="cal-legend-cell" style="background:var(--cal-l2);"></div>
+        <div class="cal-legend-cell" style="background:var(--cal-l3);"></div>
+        <div class="cal-legend-cell" style="background:var(--cal-l4);"></div>
+        <span>More</span>
+      </div>
+    </div>`;
+}
+
+function filterToDate(ds) {
+  const mk = monthKey(ds);
+  const msel = document.getElementById('hist-month');
+  if (msel) { msel.value = mk; renderHistory(); }
+  document.getElementById('history-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderBoard() {
+  const pm = {};
+  store.forEach(r => { (pm[r.player] = pm[r.player] || []).push(r); });
+  const names = Object.keys(pm);
+  const el  = document.getElementById('leaderboard');
+  const mr  = document.getElementById('metric-row');
+  if (!names.length) {
+    el.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><i class="ti ti-trophy" aria-hidden="true"></i>No results yet.</div>';
+    mr.innerHTML = ''; return;
+  }
+  const allPuzzles = new Set(store.map(r => r.puzzle)).size;
+  const firsts = computeDailyFirsts();
+  const sortBy = document.getElementById('board-sort')?.value || 'wAvg';
+  const ranked = names.map(n => ({ name: n, ...playerStats(pm[n], allPuzzles), firsts: firsts[n] || 0 }))
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'wAvg':   return (a.wAvg ?? 99) - (b.wAvg ?? 99);
+        case 'avg':    return (a.avg ?? 99) - (b.avg ?? 99);
+        case 'best':   return (a.best ?? 99) - (b.best ?? 99);
+        case 'wSum':   return (a.wSum ?? 99) - (b.wSum ?? 99);
+        case 'total':  return b.total - a.total;
+        case 'solved': return b.solved - a.solved;
+        case 'failed': return a.failed - b.failed;
+        case 'missed': return a.missed - b.missed;
+        case 'firsts': return b.firsts - a.firsts;
+        default:       return (a.wAvg ?? 99) - (b.wAvg ?? 99);
+      }
+    });
+  const allSolved = store.filter(r => r.guesses !== null);
+  const groupAvg = allSolved.length ? (allSolved.reduce((a, r) => a + r.guesses, 0) / allSolved.length) : null;
+
+  mr.innerHTML = `
+    <div class="metric"><div class="metric-lbl">Puzzles</div><div class="metric-val">${allPuzzles}</div></div>
+    <div class="metric"><div class="metric-lbl">Players</div><div class="metric-val">${names.length}</div></div>
+    <div class="metric"><div class="metric-lbl">Group avg</div><div class="metric-val">${groupAvg ? groupAvg.toFixed(2) : '—'}</div></div>
+    <div class="metric"><div class="metric-lbl">X/6 total</div><div class="metric-val">${store.filter(r => r.guesses === null).length}</div></div>
+  `;
+
+  el.innerHTML = ranked.map((p, i) => {
+    const rankEl = i < 3
+      ? `<span class="rank-badge">${['🥇','🥈','🥉'][i]}</span>`
+      : `<span class="rank-badge"><span class="rank-num">${i + 1}</span></span>`;
+    const col = avatarColor(p.name);
+    const distMax = Math.max(...p.dist, 1);
+    const distLabels = ['1','2','3','4','5','6','X'];
+    const distHtml = p.dist.map((cnt, j) => `
+      <div class="dist-row">
+        <span class="dist-num">${distLabels[j]}</span>
+        <div class="dist-track"><div class="dist-fill${j === (p.best ?? 1) - 1 ? ' best' : ''}${j === 6 ? ' fail' : ''}" style="width:${Math.round(cnt / distMax * 100)}%"></div></div>
+        <span class="dist-count">${cnt}</span>
+      </div>`).join('');
+
+    return `<div class="player-card">
+      <div class="pc-top">
+        ${rankEl}
+        <div class="avatar" style="background:${col}20;color:${col}">${initials(p.name)}</div>
+        <div class="pc-name-row">
+          <div class="pc-name">@${p.name}</div>
+          <div class="pc-sub">${p.wAvg !== null ? p.wAvg.toFixed(2) + ' wtd avg' : '—'}</div>
+        </div>
+        <div class="pc-badges">
+          ${p.firsts > 0 ? `<span class="badge badge-crown">👑 ${p.firsts}</span>` : ''}
+        </div>
+      </div>
+      <div class="stat-strip">
+        <div class="stat-cell${sortBy==='avg'?' stat-cell--active':''}"><div class="stat-val">${p.avg !== null ? p.avg.toFixed(2) : '—'}</div><div class="stat-lbl">solve avg</div></div>
+        <div class="stat-cell${sortBy==='total'?' stat-cell--active':''}"><div class="stat-val">${p.total}</div><div class="stat-lbl">played</div></div>
+        <div class="stat-cell${sortBy==='solved'?' stat-cell--active':''}"><div class="stat-val">${p.solved}</div><div class="stat-lbl">solved</div></div>
+        <div class="stat-cell${sortBy==='best'?' stat-cell--active':''}"><div class="stat-val">${p.best ?? '—'}</div><div class="stat-lbl">best guess</div></div>
+        <div class="stat-cell${sortBy==='wAvg'?' stat-cell--active':''}"><div class="stat-val">${p.wAvg !== null ? p.wAvg.toFixed(2) : '—'}</div><div class="stat-lbl">wtd avg</div></div>
+        <div class="stat-cell${sortBy==='wSum'?' stat-cell--active':''}"><div class="stat-val">${p.wSum ?? '—'}</div><div class="stat-lbl">wtd total</div></div>
+        <div class="stat-cell${sortBy==='failed'?' stat-cell--active':''}"><div class="stat-val" style="${p.failed > 0 && sortBy!=='failed' ? 'color:var(--red)' : ''}">${p.failed}</div><div class="stat-lbl">X/6</div></div>
+        <div class="stat-cell${sortBy==='missed'?' stat-cell--active':''}"><div class="stat-val" style="${p.missed > 0 && sortBy!=='missed' ? 'color:var(--text3)' : ''}">${p.missed}</div><div class="stat-lbl">missed days</div></div>
+      </div>
+      <div class="dist-section">${distHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Parser ── */
+function detectDateFromText(text) {
+  const lower = text.toLowerCase();
+  const hasYesterday = /\byesterday\b/.test(lower);
+  const hasToday     = /\btoday\b/.test(lower);
+
+  // Find the explicit M/D/YYYY timestamp (the APP post date)
+  const dm = /(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(text);
+  if (dm) {
+    const postDate = new Date(+dm[3], +dm[1] - 1, +dm[2]);
+    if (hasYesterday) postDate.setDate(postDate.getDate() - 1);
+    // "today" or no keyword → use post date as-is
+    return postDate.toISOString().slice(0, 10);
+  }
+
+  // No explicit date — fall back to system clock
+  if (hasYesterday) return yesterday();
+  if (hasToday)     return today();
+  return null;
+}
+
+function autoDetectDate(text) {
+  detectedDate = detectDateFromText(text) || null;
+  pendingDate  = detectedDate;
+}
+
+function setManualDate(val) {
+  pendingDate = val || null;
+}
+
+function parseDiscordMsg(text) {
+  const results = [];
+  const scoreRe = /([1-6X])\/6\s*:/gi;
+  // \p{L}\p{N} matches Unicode letters+numbers (covers Korean, Japanese, etc.)
+  const mentionRe = /@([\p{L}\p{N}_.\-]+)/gu;
+  const lines = text.split('\n');
+  for (const line of lines) {
+    const sm = scoreRe.exec(line);
+    scoreRe.lastIndex = 0;
+    if (!sm) continue;
+    const guesses = sm[1].toUpperCase() === 'X' ? null : parseInt(sm[1]);
+    const after = line.slice(sm.index + sm[0].length);
+    mentionRe.lastIndex = 0;
+    let m;
+    while ((m = mentionRe.exec(after)) !== null) results.push({ player: m[1], guesses });
+  }
+  return results;
+}
+
+function parsePreview() {
+  const raw = document.getElementById('paste-area').value.trim();
+  const fb  = document.getElementById('feedback');
+  const pa  = document.getElementById('preview-area');
+  const cb  = document.getElementById('commit-btn');
+  fb.textContent = ''; pa.innerHTML = ''; cb.style.display = 'none';
+  pendingResults = []; pendingNewPlayers = [];
+  if (!raw) { fb.style.color = 'var(--red)'; fb.textContent = 'Paste a message first.'; return; }
+
+  const parsed = parseDiscordMsg(raw);
+  if (!parsed.length) { fb.style.color = 'var(--red)'; fb.textContent = "Couldn't find any score/mention pairs."; return; }
+
+  const streakMatch = /\b(\d+)\s+day\s+streak\b/i.exec(raw);
+  const parsedStreak = streakMatch ? parseInt(streakMatch[1]) : null;
+
+  const pNum = parseInt(document.getElementById('puzzle-num').value) || nextPuzzleNum() || 1;
+  // Use auto-detected date, or fall back to whatever is in the inline preview input (if already shown)
+  const dateVal = pendingDate || null;
+
+  // Warn if this date already has logged entries
+  const existingOnDate = dateVal ? store.filter(r => r.date === dateVal) : [];
+  const dateWarning = existingOnDate.length
+    ? `<div class="warn-banner"><i class="ti ti-alert-triangle" aria-hidden="true"></i><span>${existingOnDate.length} entr${existingOnDate.length === 1 ? 'y' : 'ies'} already logged for ${fmtDate(dateVal)} — duplicate players will be skipped.</span></div>`
+    : '';
+
+  const dupes = [], fresh = [];
+
+  parsed.forEach(r => {
+    if (store.find(s => s.player === r.player && s.puzzle === pNum)) dupes.push(r.player);
+    else fresh.push(r);
+  });
+
+  pendingNewPlayers = [...new Set(fresh.filter(r => !inRoster(r.player)).map(r => r.player))];
+
+  const rows = parsed.map(r => {
+    const isDup = dupes.includes(r.player);
+    const isNew = !isDup && !inRoster(r.player);
+    const col = avatarColor(r.player);
+    const score = r.guesses === null ? 'X/6' : r.guesses + '/6';
+    const scoreColor = r.guesses === null ? 'color:var(--red)' : '';
+    return `<div class="preview-row">
+      <div class="avatar-sm" style="background:${col}20;color:${col}">${initials(r.player)}</div>
+      <span class="preview-score" style="${scoreColor}">${score}</span>
+      <span class="preview-name">@${r.player}</span>
+      <div class="preview-actions">
+        ${isDup ? '<span class="badge badge-dup">already logged</span>' : ''}
+        ${isNew ? `<span class="badge badge-new">new</span>
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;color:var(--text2);">
+            <input type="checkbox" class="add-to-roster-cb" data-name="${r.player}" checked> add to roster
+          </label>` : ''}
+        ${!isDup && !isNew ? '<span class="badge badge-known">known</span>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const newNote = pendingNewPlayers.length
+    ? `<div class="new-player-note"><i class="ti ti-user-plus" aria-hidden="true"></i> ${pendingNewPlayers.length} new player${pendingNewPlayers.length > 1 ? 's' : ''} — check the boxes to add to roster on save</div>`
+    : '';
+
+  const dateField = dateVal
+    ? `<span style="color:var(--text2);">${fmtDate(dateVal)}</span>
+       <button class="btn-sm" style="padding:2px 7px;font-size:11px;" onclick="detectedDate=null;pendingDate=null;parsePreview()" title="Change date">
+         <i class="ti ti-pencil" aria-hidden="true"></i>
+       </button>`
+    : `<input type="date" id="preview-date-input" style="padding:3px 8px;font-size:12px;width:160px;border-color:var(--red);" oninput="setManualDate(this.value)" title="Date is required">`;
+
+  pa.innerHTML = `<div class="preview-box">
+    ${dateWarning}
+    <div class="preview-meta" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span>Puzzle #${pNum}</span>
+      <span style="color:var(--border2);">·</span>
+      <span style="display:flex;align-items:center;gap:6px;">${dateField}</span>
+      <span style="color:var(--border2);">·</span>
+      <span>${fresh.length} new, ${dupes.length} skipped</span>
+    </div>
+    ${rows}${newNote}
+  </div>`;
+
+  if (fresh.length) {
+    pendingResults = fresh.map(r => ({ id: uid(), player: r.player, puzzle: pNum, guesses: r.guesses, date: dateVal, streak: parsedStreak }));
+    cb.style.display = '';
+  }
+}
+
+async function commitResults() {
+  if (!pendingResults.length) return;
+
+  // Validate date before allowing save
+  if (!pendingDate) {
+    const fb = document.getElementById('feedback');
+    fb.style.color = 'var(--red)';
+    fb.textContent = 'Please set a date before saving.';
+    document.getElementById('preview-date-input')?.focus();
+    return;
+  }
+  const testDate = new Date(pendingDate);
+  if (isNaN(testDate.getTime())) {
+    const fb = document.getElementById('feedback');
+    fb.style.color = 'var(--red)';
+    fb.textContent = `"${pendingDate}" is not a valid date — please correct it.`;
+    return;
+  }
+
+  // Apply confirmed date to all pending results
+  pendingResults.forEach(r => r.date = pendingDate);
+  document.querySelectorAll('.add-to-roster-cb:checked').forEach(cb => {
+    const n = cb.dataset.name.toLowerCase();
+    if (!roster.includes(n)) roster.push(n);
+  });
+  store.push(...pendingResults);
+  await persistAll();
+  renderAll(); renderRoster();
+  const n = pendingResults.length;
+  pendingResults = []; pendingNewPlayers = [];
+  detectedDate = null; pendingDate = null;
+  document.getElementById('commit-btn').style.display = 'none';
+  document.getElementById('preview-area').innerHTML = '';
+  document.getElementById('paste-area').value = '';
+  document.getElementById('puzzle-num').value = '';
+  const fb = document.getElementById('feedback');
+  fb.style.color = 'var(--green)'; fb.textContent = `Saved ${n} result${n !== 1 ? 's' : ''}.`;
+}
+
+function clearAdd() {
+  document.getElementById('paste-area').value = '';
+  document.getElementById('puzzle-num').value = '';
+  document.getElementById('preview-area').innerHTML = '';
+  document.getElementById('commit-btn').style.display = 'none';
+  document.getElementById('feedback').textContent = '';
+  pendingResults = []; pendingNewPlayers = [];
+  detectedDate = null; pendingDate = null;
+}
+
+async function manualAdd() {
+  const player  = document.getElementById('m-player').value.trim();
+  const dateVal = document.getElementById('m-date').value || today();
+  const g       = document.getElementById('m-guesses').value.trim().toUpperCase();
+  const fb      = document.getElementById('manual-feedback');
+  fb.style.color = 'var(--red)';
+  if (!player) { fb.textContent = 'Enter a player name.'; return; }
+  const guesses = g === 'X' ? null : parseInt(g);
+  if (g !== 'X' && (isNaN(guesses) || guesses < 1 || guesses > 6)) { fb.textContent = 'Score must be 1–6 or X.'; return; }
+  const pNum = nextPuzzleNum() || 1;
+  if (store.find(r => r.player === player && r.date === dateVal)) { fb.textContent = `${player} already has an entry for ${fmtDate(dateVal)}.`; return; }
+  store.push({ id: uid(), player, puzzle: pNum, guesses, date: dateVal });
+  if (!inRoster(player)) { roster.push(player.toLowerCase()); }
+  await persistAll();
+  renderAll(); renderRoster(); updateHistSelect();
+  fb.style.color = 'var(--green)'; fb.textContent = `Saved @${player} on ${fmtDate(dateVal)}.`;
+  document.getElementById('m-player').value = '';
+  document.getElementById('m-guesses').value = '';
+}
+
+function monthKey(dateStr) {
+  if (!dateStr) return null;
+  return dateStr.slice(0, 7); // "YYYY-MM"
+}
+function fmtMonth(key) {
+  if (!key) return '—';
+  const [y, m] = key.split('-');
+  return new Date(+y, +m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function updateHistSelect() {
+  const sel  = document.getElementById('hist-player');
+  const cur  = sel.value;
+  const names = [...new Set(store.map(r => r.player))].sort();
+  sel.innerHTML = '<option value="__all__">All players</option>' +
+    names.map(n => `<option value="${n}"${n === cur ? ' selected' : ''}>${n}</option>`).join('');
+
+  const msel = document.getElementById('hist-month');
+  const mcur = msel?.value;
+  const months = [...new Set(store.map(r => monthKey(r.date)).filter(Boolean))].sort().reverse();
+  if (msel) {
+    msel.innerHTML = '<option value="__all__">All time</option>' +
+      months.map(k => `<option value="${k}"${k === mcur ? ' selected' : ''}>${fmtMonth(k)}</option>`).join('');
+  }
+
+  const dl = document.getElementById('roster-datalist');
+  dl.innerHTML = [...new Set([...names, ...roster])].sort().map(n => `<option value="${n}">`).join('');
+}
+
+function renderHistory() {
+  const sel  = document.getElementById('hist-player')?.value || '__all__';
+  const sort = document.getElementById('hist-sort')?.value || 'date-desc';
+  const month = document.getElementById('hist-month')?.value || '__all__';
+  let rows = store.filter(r =>
+    (sel   === '__all__' || r.player === sel) &&
+    (month === '__all__' || monthKey(r.date) === month)
+  );
+  rows.sort((a, b) => {
+    if (sort === 'date-asc')    return (a.date || '') < (b.date || '') ? -1 : 1;
+    if (sort === 'puzzle-desc') return b.puzzle - a.puzzle;
+    return (a.date || '') > (b.date || '') ? -1 : 1;
+  });
+  const area = document.getElementById('history-area');
+  if (!rows.length) { area.innerHTML = '<div class="empty-state">No entries yet.</div>'; return; }
+
+  const groups = {};
+  rows.forEach(r => { const k = r.date || 'Unknown date'; (groups[k] = groups[k] || []).push(r); });
+
+  area.innerHTML = Object.keys(groups).map(date => {
+    const entries = groups[date].map(r => {
+      if (r.id === editingId) {
+        const scoreVal = r.guesses === null ? 'X' : String(r.guesses);
+        const dateStreak = store.find(e => e.date === r.date)?.streak ?? '';
+        return `<div class="hist-edit-row">
+          <div>
+            <div class="field-label">Player</div>
+            <input class="ef-player" id="ef-player-${r.id}" type="text" value="${r.player}" list="roster-datalist">
+          </div>
+          <div>
+            <div class="field-label">Date</div>
+            <input class="ef-date" id="ef-date-${r.id}" type="date" value="${r.date || ''}">
+          </div>
+          <div>
+            <div class="field-label">Score</div>
+            <input class="ef-score" id="ef-score-${r.id}" type="text" value="${scoreVal}" placeholder="1–6 or X">
+          </div>
+          <div>
+            <div class="field-label">🔥 Streak</div>
+            <input class="ef-streak" id="ef-streak-${r.id}" type="number" min="1" value="${dateStreak}" placeholder="day #">
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn-primary btn-sm" onclick="saveEdit('${r.id}')"><i class="ti ti-check" aria-hidden="true"></i> Save</button>
+            <button class="btn-sm" onclick="cancelEdit()">Cancel</button>
+          </div>
+        </div>`;
+      }
+      const score = r.guesses === null ? 'X/6' : r.guesses + '/6';
+      const col = avatarColor(r.player);
+      const isConfirming = confirmingDeleteId === r.id;
+      return `<div class="hist-row">
+        <span class="hist-puzzle">#${r.puzzle}</span>
+        <div class="avatar-sm" style="background:${col}20;color:${col}">${initials(r.player)}</div>
+        <span class="hist-player">@${r.player}</span>
+        <button class="hist-score-btn${r.guesses === null ? ' fail' : ''}" onclick="editEntry('${r.id}')" title="Click to edit">${score}</button>
+        <span class="hist-wtd">${effectiveGuesses(r.guesses)}</span>
+        ${isConfirming
+          ? `<div class="hist-del-confirm">
+               <span>Delete?</span>
+               <button class="btn-sm btn-danger" onclick="confirmDelete('${r.id}')">Yes, delete</button>
+               <button class="btn-sm" onclick="cancelDelete()">Cancel</button>
+             </div>`
+          : `<button class="btn-sm" style="margin-left:auto;" onclick="promptDelete('${r.id}')" aria-label="Delete"><i class="ti ti-trash" aria-hidden="true"></i></button>`
+        }
+      </div>`;
+    }).join('');
+    const streak = groups[date][0]?.streak ?? null;
+    const streakField = `<span style="display:inline-flex;align-items:center;gap:4px;text-transform:none;letter-spacing:0;font-weight:400;margin-left:10px;">
+      🔥
+      <input type="number" min="1"
+        value="${streak ?? ''}"
+        placeholder="—"
+        title="Day streak — press Enter to save"
+        style="width:48px;padding:1px 5px;font-size:11px;font-weight:500;color:var(--text2);background:transparent;border:1px solid transparent;border-radius:4px;text-align:center;"
+        onmouseover="this.style.borderColor='var(--border2)'"
+        onmouseout="if(document.activeElement!==this)this.style.borderColor='transparent'"
+        onfocus="this.style.borderColor='var(--border2)';this.style.background='var(--bg)'"
+        onblur="this.style.borderColor='transparent';this.style.background='transparent';saveStreakFromHeader('${date}',this.value)"
+        onkeydown="if(event.key==='Enter'){this.blur();}if(event.key==='Escape'){this.value='${streak ?? ''}';this.blur();}">
+    </span>`;
+
+    const isConfirmingDate = confirmingDeleteDate === date;
+    const dateHead = isConfirmingDate
+      ? `<div class="hist-group-head">
+           <span>${fmtDate(date)}</span>${streakField}
+           <div class="date-del-confirm">
+             <span>Delete all ${groups[date].length} entr${groups[date].length === 1 ? 'y' : 'ies'}?</span>
+             <button class="btn-sm btn-danger" onclick="confirmDeleteDate('${date}')">Yes, delete</button>
+             <button class="btn-sm" onclick="cancelDelete()">Cancel</button>
+           </div>
+         </div>`
+      : `<div class="hist-group-head">
+           <span>${fmtDate(date)}</span>${streakField}
+           <button class="btn-sm" style="margin-left:auto;opacity:.5;" onclick="promptDeleteDate('${date}')" title="Delete all entries for this date"><i class="ti ti-trash" aria-hidden="true"></i></button>
+         </div>`;
+    return `<div class="hist-group">${dateHead}${entries}</div>`;
+  }).join('');
+}
+
+
+function exportData(filteredStore, filename) {
+  const data = { store: filteredStore ?? store, roster };
+  const b = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b);
+  a.download = filename ?? 'wordle-tracker.json';
+  a.click();
+}
+
+function exportFiltered() {
+  const player = document.getElementById('hist-player')?.value || '__all__';
+  const month  = document.getElementById('hist-month')?.value  || '__all__';
+  const isAll  = player === '__all__' && month === '__all__';
+  if (isAll) { exportData(); return; }
+  const filtered = store.filter(r =>
+    (player === '__all__' || r.player === player) &&
+    (month  === '__all__' || monthKey(r.date) === month)
+  );
+  const parts = [
+    month  !== '__all__' ? fmtMonth(month).replace(' ', '-') : 'all-time',
+    player !== '__all__' ? player : null,
+  ].filter(Boolean);
+  exportData(filtered, `wordle-${parts.join('-')}.json`);
+}
+
+function importData(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = async () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (d.store && Array.isArray(d.store)) store = d.store;
+      else if (Array.isArray(d)) store = d;
+      if (d.roster && Array.isArray(d.roster)) roster = d.roster;
+      await persistAll();
+      renderAll(); renderRoster(); updateHistSelect();
+    } catch(err) { alert('Invalid JSON file.'); }
+  };
+  r.readAsText(f);
+}
+
+/* ── Roster ── */
+function renderRoster() {
+  const list  = document.getElementById('roster-list');
+  const empty = document.getElementById('roster-empty');
+  if (!roster.length) { list.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  list.innerHTML = [...roster].sort().map(name => {
+    const col = avatarColor(name);
+    return `<div class="roster-chip">
+      <div class="avatar-sm" style="background:${col}20;color:${col};width:22px;height:22px;font-size:9px;">${initials(name)}</div>
+      @${name}
+      <button class="roster-chip-remove" onclick="removeRosterPlayer('${name}')" aria-label="Remove ${name}"><i class="ti ti-x" style="font-size:12px;" aria-hidden="true"></i></button>
+    </div>`;
+  }).join('');
+}
+
+async function addRosterPlayer() {
+  const inp = document.getElementById('add-player-input');
+  const fb  = document.getElementById('roster-feedback');
+  const name = inp.value.trim().toLowerCase().replace(/^@/, '');
+  fb.textContent = '';
+  if (!name) return;
+  if (roster.includes(name)) { fb.style.color = 'var(--text2)'; fb.textContent = `@${name} is already in the roster.`; return; }
+  roster.push(name);
+  await persistAll();
+  renderRoster(); updateHistSelect();
+  inp.value = '';
+  fb.style.color = 'var(--green)'; fb.textContent = `Added @${name}.`;
+}
+
+async function removeRosterPlayer(name) {
+  roster = roster.filter(r => r !== name);
+  await persistAll();
+  renderRoster(); updateHistSelect();
+}
+
+/* ── Edit / delete entry ── */
+let editingId = null;
+let confirmingDeleteId   = null;
+let confirmingDeleteDate = null;
+let editingStreakDate     = null;
+
+function promptDelete(id) {
+  confirmingDeleteId = id;
+  confirmingDeleteDate = null;
+  editingId = null;
+  renderHistory();
+}
+
+function cancelDelete() {
+  confirmingDeleteId = null;
+  confirmingDeleteDate = null;
+  renderHistory();
+}
+
+async function confirmDelete(id) {
+  confirmingDeleteId = null;
+  store = store.filter(r => r.id !== id);
+  await persistAll();
+  renderAll();
+}
+
+function promptDeleteDate(date) {
+  confirmingDeleteDate = date;
+  confirmingDeleteId = null;
+  editingId = null;
+  renderHistory();
+}
+
+function startEditStreak(date) {
+  editingStreakDate = date;
+  confirmingDeleteDate = null;
+  renderHistory();
+  setTimeout(() => document.getElementById(`streak-input-${date}`)?.focus(), 0);
+}
+
+function cancelEditStreak() {
+  editingStreakDate = null;
+  renderHistory();
+}
+
+async function saveStreak(date) {
+  const val = parseInt(document.getElementById(`streak-input-${date}`)?.value);
+  if (isNaN(val) || val < 1) { cancelEditStreak(); return; }
+  store.forEach(r => { if (r.date === date) r.streak = val; });
+  editingStreakDate = null;
+  await persistAll();
+  renderHistory();
+}
+
+async function saveStreakFromHeader(date, val) {
+  const n = parseInt(val);
+  const streak = !isNaN(n) && n > 0 ? n : null;
+  store.forEach(r => { if (r.date === date) r.streak = streak; });
+  await persistAll();
+  renderHistory();
+}
+
+async function confirmDeleteDate(date) {
+  confirmingDeleteDate = null;
+  store = store.filter(r => r.date !== date);
+  await persistAll();
+  renderAll();
+}
+
+function editEntry(id) {
+  editingId = id;
+  renderHistory();
+}
+
+function cancelEdit() {
+  editingId = null;
+  renderHistory();
+}
+
+async function saveEdit(id) {
+  const player  = document.getElementById(`ef-player-${id}`).value.trim();
+  const dateVal = document.getElementById(`ef-date-${id}`).value;
+  const g       = document.getElementById(`ef-score-${id}`).value.trim().toUpperCase();
+  if (!player) { alert('Player name is required.'); return; }
+  const guesses = g === 'X' ? null : parseInt(g);
+  if (g !== 'X' && (isNaN(guesses) || guesses < 1 || guesses > 6)) { alert('Score must be 1–6 or X.'); return; }
+  const idx = store.findIndex(r => r.id === id);
+  if (idx === -1) return;
+  // Check for duplicate (same player+date, excluding this entry)
+  const conflict = store.find(r => r.id !== id && r.player === player && r.date === dateVal);
+  if (conflict) { alert(`@${player} already has an entry for ${fmtDate(dateVal)}.`); return; }
+  const streakVal = parseInt(document.getElementById(`ef-streak-${id}`)?.value);
+  const newStreak = !isNaN(streakVal) && streakVal > 0 ? streakVal : store[idx].streak ?? null;
+  // Apply streak to all entries on the same date
+  store.forEach(r => { if (r.date === dateVal) r.streak = newStreak; });
+  store[idx] = { ...store[idx], player, date: dateVal, guesses, streak: newStreak };
+  if (!inRoster(player)) { roster.push(player.toLowerCase()); saveToLS(); }
+  editingId = null;
+  await persistAll();
+  renderAll();
+}
+
+/* ── Read-only mode (Vercel / static host) ── */
+const READ_ONLY = location.protocol !== 'file:' && !location.hostname.includes('localhost') && !location.hostname.includes('127.0.0.1');
+
+async function initReadOnly() {
+  try {
+    const res = await fetch('data.json');
+    if (!res.ok) throw new Error('no data.json');
+    const d = await res.json();
+    if (d.store && Array.isArray(d.store)) store = d.store;
+    if (d.roster && Array.isArray(d.roster)) roster = d.roster;
+  } catch(e) { console.warn('Read-only mode: could not load data.json', e); }
+  // Hide all editing UI
+  document.querySelectorAll('[data-edit-only]').forEach(el => el.style.display = 'none');
+  // Hide Log + Players tabs entirely
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    if (btn.textContent.includes('Log') || btn.textContent.includes('Players')) btn.style.display = 'none';
+  });
+  // Hide file chip + status bar
+  const fc = document.getElementById('file-chip');
+  if (fc) fc.style.display = 'none';
+  const sb = document.getElementById('status-bar');
+  if (sb) sb.style.display = 'none';
+  // Show read-only badge
+  const title = document.querySelector('.app-title');
+  if (title) title.insertAdjacentHTML('afterend', '<span style="font-size:11px;padding:3px 8px;background:var(--blue-bg);color:var(--blue);border-radius:99px;font-weight:500;">view only</span>');
+  renderAll();
+  updateHistSelect();
+}
+
+/* ── Export for deploy ── */
+function exportForDeploy() {
+  const data = { store, roster };
+  const b = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b);
+  a.download = 'data.json';
+  a.click();
+}
+
+/* ── Init ── */
+if (READ_ONLY) {
+  initReadOnly();
+} else {
+  loadFromLS();
+  initDateDefaults();
+  renderAll();
+  updateHistSelect();
+  updateFileStatus();
+}
+</script>
+</body>
+</html>
