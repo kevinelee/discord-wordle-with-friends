@@ -573,8 +573,9 @@
       font-size: 11px; font-weight: 600;
     }
     .valo-stat { font-size: 13px; font-weight: 500; text-align: center; padding: 10px 8px; }
-    .valo-highlight { background: color-mix(in srgb, var(--green) 7%, transparent); }
-    .valo-dim        { background: color-mix(in srgb, var(--red) 5%, transparent); }
+    .valo-stat.sort-col { background: color-mix(in srgb, var(--text) 5%, transparent); }
+    .valo-highlight { background: color-mix(in srgb, var(--green) 10%, var(--bg)); }
+    .valo-dim        { background: color-mix(in srgb, var(--red)   7%, var(--bg)); }
 
     @media (max-width: 700px) {
       #leaderboard { grid-template-columns: 1fr; }
@@ -923,9 +924,28 @@ function playerStats(results, allPuzzles) {
 /* ── Leaderboard sort state ── */
 let valoSort = { col: 'wAvg', dir: 'asc' };
 function sortValo(col) {
+  // FLIP — snapshot positions before re-render
+  const before = {};
+  document.querySelectorAll('#leaderboard-valo tr[data-player]').forEach(row => {
+    before[row.dataset.player] = row.getBoundingClientRect().top;
+  });
+
   valoSort.dir = valoSort.col === col && valoSort.dir === 'asc' ? 'desc' : 'asc';
   valoSort.col = col;
   renderLeaderboard();
+
+  // FLIP — animate each row from its old position to its new one
+  document.querySelectorAll('#leaderboard-valo tr[data-player]').forEach(row => {
+    const oldTop = before[row.dataset.player];
+    if (oldTop === undefined) return;
+    const delta = oldTop - row.getBoundingClientRect().top;
+    if (!delta) return;
+    row.style.transition = 'none';
+    row.style.transform = `translateY(${delta}px)`;
+    row.getBoundingClientRect(); // force reflow
+    row.style.transition = 'transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    row.style.transform = 'translateY(0)';
+  });
 }
 function valoTh(label, col) {
   const active = valoSort.col === col;
@@ -1014,15 +1034,17 @@ function renderLeaderboard() {
     const rowCls  = i < mid ? 'valo-highlight' : 'valo-dim';
     const streakBadge = '';
     const crownBadge  = p.firsts > 0 ? `<span class="badge badge-crown" style="margin-left:4px;">👑${p.firsts}</span>` : '';
-    return `<tr class="${rowCls}">
-      <td style="padding:10px 6px 10px 12px;width:20px;text-align:center;"><span class="valo-rank ${rankCls}">${i + 1}</span></td>
+    const col = avatarColor(p.name);
+    const sc = valoSort.col;
+    return `<tr class="${rowCls}" data-player="${p.name}">
+      <td style="padding:10px 6px 10px 12px;width:20px;text-align:center;box-shadow:inset 3px 0 0 ${col};"><span class="valo-rank ${rankCls}">${i + 1}</span></td>
       <td style="padding:10px 4px;width:30px;">${avatarHTML(p.name, 'valo-avatar')}</td>
       <td style="padding:10px 12px;font-size:13px;font-weight:500;">@${p.name}${streakBadge}${crownBadge}</td>
-      <td class="valo-stat">${p.wAvg !== null ? p.wAvg.toFixed(2) : '—'}</td>
-      <td class="valo-stat">${p.avg !== null ? p.avg.toFixed(2) : '—'}</td>
-      <td class="valo-stat">${p.best ?? '—'}</td>
-      <td class="valo-stat">${Math.round(p.total / allPuzzles * 100)}%</td>
-      <td class="valo-stat" style="${p.failed > 0 ? 'color:var(--red)' : ''}">${p.failed}</td>
+      <td class="valo-stat${sc==='wAvg'?' sort-col':''}">${p.wAvg !== null ? p.wAvg.toFixed(2) : '—'}</td>
+      <td class="valo-stat${sc==='avg'?' sort-col':''}">${p.avg !== null ? p.avg.toFixed(2) : '—'}</td>
+      <td class="valo-stat${sc==='best'?' sort-col':''}">${p.best ?? '—'}</td>
+      <td class="valo-stat${sc==='played'?' sort-col':''}">${Math.round(p.total / allPuzzles * 100)}%</td>
+      <td class="valo-stat${sc==='failed'?' sort-col':''}" style="${p.failed > 0 ? 'color:var(--red)' : ''}">${p.failed}</td>
     </tr>`;
   }).join('');
 
