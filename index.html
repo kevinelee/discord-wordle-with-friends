@@ -908,8 +908,8 @@ function playerStats(results, allPuzzles) {
   const solved   = results.filter(r => r.guesses !== null).length;
   const failed   = results.filter(r => r.guesses === null).length;
   const missed   = allPuzzles - total;
-  const sumGuesses = results.filter(r => r.guesses !== null).reduce((a, r) => a + r.guesses, 0);
-  const avg      = solved ? (sumGuesses / solved) : null;
+  const sumGuesses = results.reduce((a, r) => a + effectiveGuesses(r.guesses), 0);
+  const avg      = total > 0 ? (sumGuesses / total) : null;
   const best     = solved ? Math.min(...results.filter(r => r.guesses !== null).map(r => r.guesses)) : null;
   const wSum     = results.reduce((a, r) => a + effectiveGuesses(r.guesses), 0) + (missed * MISS_WEIGHT);
   const wAvg     = allPuzzles > 0 ? (wSum / allPuzzles) : null;
