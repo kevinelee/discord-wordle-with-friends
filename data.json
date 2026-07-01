@@ -497,6 +497,494 @@
       "guesses": null,
       "date": "2026-06-16",
       "streak": 68
+    },
+    {
+      "id": "53jflc2b5s9",
+      "player": "Thuan",
+      "puzzle": 21,
+      "guesses": 3,
+      "date": "2026-06-17",
+      "streak": 69
+    },
+    {
+      "id": "a95nsc4k3sv",
+      "player": "stuckatfyrefest",
+      "puzzle": 21,
+      "guesses": 4,
+      "date": "2026-06-17",
+      "streak": 69
+    },
+    {
+      "id": "l6sxq4yh2an",
+      "player": "bingebonge",
+      "puzzle": 21,
+      "guesses": 4,
+      "date": "2026-06-17",
+      "streak": 69
+    },
+    {
+      "id": "1mpsh8u0342",
+      "player": "hannita",
+      "puzzle": 21,
+      "guesses": 5,
+      "date": "2026-06-17",
+      "streak": 69
+    },
+    {
+      "id": "jl584yw0z0h",
+      "player": "션",
+      "puzzle": 21,
+      "guesses": 6,
+      "date": "2026-06-17",
+      "streak": 69
+    },
+    {
+      "id": "iu2ykbiclma",
+      "player": "yoonasenpaii",
+      "puzzle": 21,
+      "guesses": 6,
+      "date": "2026-06-17",
+      "streak": 69
+    },
+    {
+      "id": "n3889bzac9i",
+      "player": "stuckatfyrefest",
+      "puzzle": 22,
+      "guesses": 4,
+      "date": "2026-06-18",
+      "streak": 70
+    },
+    {
+      "id": "ibgm2tmzftd",
+      "player": "bingebonge",
+      "puzzle": 22,
+      "guesses": 4,
+      "date": "2026-06-18",
+      "streak": 70
+    },
+    {
+      "id": "0wnchq1z484c",
+      "player": "supernothing",
+      "puzzle": 22,
+      "guesses": 5,
+      "date": "2026-06-18",
+      "streak": 70
+    },
+    {
+      "id": "xdtgn10075a",
+      "player": "Thuan",
+      "puzzle": 22,
+      "guesses": 5,
+      "date": "2026-06-18",
+      "streak": 70
+    },
+    {
+      "id": "nw14dryuibb",
+      "player": "션",
+      "puzzle": 22,
+      "guesses": 5,
+      "date": "2026-06-18",
+      "streak": 70
+    },
+    {
+      "id": "daenvlzrem",
+      "player": "hannita",
+      "puzzle": 22,
+      "guesses": null,
+      "date": "2026-06-18",
+      "streak": 70
+    },
+    {
+      "id": "3ierzv6gocr",
+      "player": "Thuan",
+      "puzzle": 23,
+      "guesses": 5,
+      "date": "2026-06-19",
+      "streak": 71
+    },
+    {
+      "id": "tpg2e4jcvz",
+      "player": "supernothing",
+      "puzzle": 23,
+      "guesses": null,
+      "date": "2026-06-19",
+      "streak": 71
+    },
+    {
+      "id": "73xu7if77eq",
+      "player": "hannita",
+      "puzzle": 23,
+      "guesses": null,
+      "date": "2026-06-19",
+      "streak": 71
+    },
+    {
+      "id": "dom42acwnkn",
+      "player": "yoonasenpaii",
+      "puzzle": 23,
+      "guesses": null,
+      "date": "2026-06-19",
+      "streak": 71
+    },
+    {
+      "id": "vt3hkw4yko",
+      "player": "bingebonge",
+      "puzzle": 23,
+      "guesses": null,
+      "date": "2026-06-19",
+      "streak": 71
+    },
+    {
+      "id": "9mlis9n8d3",
+      "player": "hannita",
+      "puzzle": 24,
+      "guesses": 3,
+      "date": "2026-06-20",
+      "streak": 72
+    },
+    {
+      "id": "vb08vpf694",
+      "player": "Thuan",
+      "puzzle": 24,
+      "guesses": 4,
+      "date": "2026-06-20",
+      "streak": 72
+    },
+    {
+      "id": "o4793yujf",
+      "player": "bingebonge",
+      "puzzle": 24,
+      "guesses": 4,
+      "date": "2026-06-20",
+      "streak": 72
+    },
+    {
+      "id": "turheloq8c",
+      "player": "stuckatfyrefest",
+      "puzzle": 25,
+      "guesses": 2,
+      "date": "2026-06-21",
+      "streak": 73
+    },
+    {
+      "id": "szss2rr5fea",
+      "player": "hannita",
+      "puzzle": 25,
+      "guesses": 2,
+      "date": "2026-06-21",
+      "streak": 73
+    },
+    {
+      "id": "kk0tf1vg1n",
+      "player": "yoonasenpaii",
+      "puzzle": 25,
+      "guesses": 3,
+      "date": "2026-06-21",
+      "streak": 73
+    },
+    {
+      "id": "efztm8vbztq",
+      "player": "bingebonge",
+      "puzzle": 25,
+      "guesses": 6,
+      "date": "2026-06-21",
+      "streak": 73
+    },
+    {
+      "id": "18siq6mvacr",
+      "player": "yoonasenpaii",
+      "puzzle": 26,
+      "guesses": 3,
+      "date": "2026-06-22",
+      "streak": 74
+    },
+    {
+      "id": "2k4cjjxey5a",
+      "player": "hannita",
+      "puzzle": 26,
+      "guesses": 3,
+      "date": "2026-06-22",
+      "streak": 74
+    },
+    {
+      "id": "vaad2efqoz9",
+      "player": "stuckatfyrefest",
+      "puzzle": 26,
+      "guesses": 4,
+      "date": "2026-06-22",
+      "streak": 74
+    },
+    {
+      "id": "74gmy0ll05",
+      "player": "션",
+      "puzzle": 26,
+      "guesses": null,
+      "date": "2026-06-22",
+      "streak": 74
+    },
+    {
+      "id": "q2rnx0pwxv",
+      "player": "supernothing",
+      "puzzle": 26,
+      "guesses": null,
+      "date": "2026-06-22",
+      "streak": 74
+    },
+    {
+      "id": "b4xx0vju1l",
+      "player": "bingebonge",
+      "puzzle": 27,
+      "guesses": 3,
+      "date": "2026-06-23",
+      "streak": 75
+    },
+    {
+      "id": "nvde6d551bo",
+      "player": "stuckatfyrefest",
+      "puzzle": 27,
+      "guesses": 3,
+      "date": "2026-06-23",
+      "streak": 75
+    },
+    {
+      "id": "p1hew4xb6o",
+      "player": "션",
+      "puzzle": 27,
+      "guesses": 5,
+      "date": "2026-06-23",
+      "streak": 75
+    },
+    {
+      "id": "ngtatfn1id",
+      "player": "yoonasenpaii",
+      "puzzle": 27,
+      "guesses": 6,
+      "date": "2026-06-23",
+      "streak": 75
+    },
+    {
+      "id": "1mfbmai0qr8",
+      "player": "Thuan",
+      "puzzle": 27,
+      "guesses": 6,
+      "date": "2026-06-23",
+      "streak": 75
+    },
+    {
+      "id": "49h1kyabg84",
+      "player": "hannita",
+      "puzzle": 27,
+      "guesses": null,
+      "date": "2026-06-23",
+      "streak": 75
+    },
+    {
+      "id": "w413jfsey7",
+      "player": "bingebonge",
+      "puzzle": 28,
+      "guesses": 4,
+      "date": "2026-06-24",
+      "streak": 76
+    },
+    {
+      "id": "6btdoizy2o2",
+      "player": "stuckatfyrefest",
+      "puzzle": 28,
+      "guesses": 4,
+      "date": "2026-06-24",
+      "streak": 76
+    },
+    {
+      "id": "ds0cg3xbjob",
+      "player": "Thuan",
+      "puzzle": 28,
+      "guesses": 5,
+      "date": "2026-06-24",
+      "streak": 76
+    },
+    {
+      "id": "7hox0lbq7xq",
+      "player": "yoonasenpaii",
+      "puzzle": 28,
+      "guesses": null,
+      "date": "2026-06-24",
+      "streak": 76
+    },
+    {
+      "id": "ows0ht9pe",
+      "player": "hannita",
+      "puzzle": 28,
+      "guesses": null,
+      "date": "2026-06-24",
+      "streak": 76
+    },
+    {
+      "id": "c8oes1weyhs",
+      "player": "bingebonge",
+      "puzzle": 29,
+      "guesses": 3,
+      "date": "2026-06-25",
+      "streak": 77
+    },
+    {
+      "id": "1q1brhk5pl9",
+      "player": "Thuan",
+      "puzzle": 29,
+      "guesses": 3,
+      "date": "2026-06-25",
+      "streak": 77
+    },
+    {
+      "id": "o2qp4oc4mv9",
+      "player": "stuckatfyrefest",
+      "puzzle": 29,
+      "guesses": 3,
+      "date": "2026-06-25",
+      "streak": 77
+    },
+    {
+      "id": "g7i2559i9lk",
+      "player": "션",
+      "puzzle": 29,
+      "guesses": 4,
+      "date": "2026-06-25",
+      "streak": 77
+    },
+    {
+      "id": "x8id4bfdw",
+      "player": "yoonasenpaii",
+      "puzzle": 29,
+      "guesses": 5,
+      "date": "2026-06-25",
+      "streak": 77
+    },
+    {
+      "id": "ahkpx9tpvet",
+      "player": "hannita",
+      "puzzle": 29,
+      "guesses": null,
+      "date": "2026-06-25",
+      "streak": 77
+    },
+    {
+      "id": "vwpgdzj6ay",
+      "player": "yoonasenpaii",
+      "puzzle": 30,
+      "guesses": 3,
+      "date": "2026-06-26",
+      "streak": 78
+    },
+    {
+      "id": "qoil9r6fr5",
+      "player": "stuckatfyrefest",
+      "puzzle": 30,
+      "guesses": 3,
+      "date": "2026-06-26",
+      "streak": 78
+    },
+    {
+      "id": "z3va090clu",
+      "player": "hannita",
+      "puzzle": 30,
+      "guesses": 3,
+      "date": "2026-06-26",
+      "streak": 78
+    },
+    {
+      "id": "n0tqulmhqzf",
+      "player": "bingebonge",
+      "puzzle": 30,
+      "guesses": 4,
+      "date": "2026-06-26",
+      "streak": 78
+    },
+    {
+      "id": "79dhph6swyy",
+      "player": "Thuan",
+      "puzzle": 30,
+      "guesses": 5,
+      "date": "2026-06-26",
+      "streak": 78
+    },
+    {
+      "id": "40jh78x46a7",
+      "player": "stuckatfyrefest",
+      "puzzle": 31,
+      "guesses": 3,
+      "date": "2026-06-27",
+      "streak": 79
+    },
+    {
+      "id": "9aqadk4eqpa",
+      "player": "션",
+      "puzzle": 31,
+      "guesses": 3,
+      "date": "2026-06-27",
+      "streak": 79
+    },
+    {
+      "id": "2f46r7x9yfe",
+      "player": "bingebonge",
+      "puzzle": 31,
+      "guesses": 3,
+      "date": "2026-06-27",
+      "streak": 79
+    },
+    {
+      "id": "qsx41izs5qh",
+      "player": "hannita",
+      "puzzle": 31,
+      "guesses": 4,
+      "date": "2026-06-27",
+      "streak": 79
+    },
+    {
+      "id": "x1okn3p7ele",
+      "player": "yoonasenpaii",
+      "puzzle": 32,
+      "guesses": 4,
+      "date": "2026-06-28",
+      "streak": 80
+    },
+    {
+      "id": "2y85uuo5tfh",
+      "player": "션",
+      "puzzle": 32,
+      "guesses": 4,
+      "date": "2026-06-28",
+      "streak": 80
+    },
+    {
+      "id": "dchvkl9f0s",
+      "player": "bingebonge",
+      "puzzle": 32,
+      "guesses": null,
+      "date": "2026-06-28",
+      "streak": 80
+    },
+    {
+      "id": "v6bjgg2gx9",
+      "player": "stuckatfyrefest",
+      "puzzle": 33,
+      "guesses": 3,
+      "date": "2026-06-29",
+      "streak": 81
+    },
+    {
+      "id": "fkv3ktl7o0j",
+      "player": "bingebonge",
+      "puzzle": 33,
+      "guesses": 4,
+      "date": "2026-06-29",
+      "streak": 81
+    },
+    {
+      "id": "th4ou1p8gv8",
+      "player": "hannita",
+      "puzzle": 33,
+      "guesses": 4,
+      "date": "2026-06-29",
+      "streak": 81
     }
   ],
   "roster": [
@@ -506,6 +994,7 @@
     "bingebonge",
     "션",
     "stuckatfyrefest",
-    "jason"
+    "jason",
+    "thuan"
   ]
 }
