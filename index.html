@@ -608,12 +608,26 @@
 
   <!-- LEADERBOARD -->
   <div id="tab-ranks" class="tab-panel active">
+    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;color:var(--text3);">Period</span>
+        <select id="leaderboard-period" onchange="setPeriodFilter(this.value)" style="font-size:12px;padding:5px 10px;">
+          <option value="__all__">All time</option>
+        </select>
+      </div>
+    </div>
     <div id="leaderboard-valo"></div>
   </div>
 
   <!-- BOARD -->
   <div id="tab-board" class="tab-panel">
-    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:12px;">
+    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:12px;gap:16px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;color:var(--text3);">Period</span>
+        <select id="board-period" onchange="setPeriodFilter(this.value)" style="font-size:12px;padding:5px 10px;">
+          <option value="__all__">All time</option>
+        </select>
+      </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <span style="font-size:12px;color:var(--text3);">Sort by</span>
         <select id="board-sort" onchange="renderBoard()" style="font-size:12px;padding:5px 10px;">
@@ -890,10 +904,41 @@ function nextPuzzleNum() {
 
 function effectiveGuesses(g) { return g === null ? FAIL_WEIGHT : g; }
 
-function computeDailyFirsts() {
+let periodFilter = '__all__';
+
+function getFilteredStore() {
+  return periodFilter === '__all__' ? store : store.filter(r => monthKey(r.date) === periodFilter);
+}
+
+function setPeriodFilter(v) {
+  periodFilter = v;
+  syncPeriodSelects();
+  renderLeaderboard();
+  renderBoard();
+}
+
+function syncPeriodSelects() {
+  ['leaderboard-period', 'board-period'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = periodFilter;
+  });
+}
+
+function updatePeriodSelects() {
+  const months = [...new Set(store.map(r => monthKey(r.date)).filter(Boolean))].sort().reverse();
+  const optsHtml = '<option value="__all__">All time</option>' +
+    months.map(k => `<option value="${k}">${fmtMonth(k)}</option>`).join('');
+  ['leaderboard-period', 'board-period'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = optsHtml;
+  });
+  syncPeriodSelects();
+}
+
+function computeDailyFirsts(src = store) {
   const firsts = {};
-  [...new Set(store.map(r => r.puzzle))].forEach(p => {
-    const solvers = store.filter(r => r.puzzle === p && r.guesses !== null);
+  [...new Set(src.map(r => r.puzzle))].forEach(p => {
+    const solvers = src.filter(r => r.puzzle === p && r.guesses !== null);
     if (!solvers.length) return;
     const best = Math.min(...solvers.map(r => r.guesses));
     solvers.filter(r => r.guesses === best).forEach(r => {
@@ -1004,15 +1049,16 @@ function renderAll() { renderLeaderboard(); renderBoard(); renderHistory(); upda
 function renderLeaderboard() {
   const el = document.getElementById('leaderboard-valo');
   if (!el) return;
+  const src = getFilteredStore();
   const pm = {};
-  store.forEach(r => { (pm[r.player] = pm[r.player] || []).push(r); });
+  src.forEach(r => { (pm[r.player] = pm[r.player] || []).push(r); });
   const names = Object.keys(pm);
   if (!names.length) {
     el.innerHTML = '<div class="empty-state"><i class="ti ti-trophy" aria-hidden="true"></i>No results yet.</div>';
     return;
   }
-  const allPuzzles = new Set(store.map(r => r.puzzle)).size;
-  const firsts = computeDailyFirsts();
+  const allPuzzles = new Set(src.map(r => r.puzzle)).size;
+  const firsts = computeDailyFirsts(src);
   const ranked = names
     .map(n => ({ name: n, ...playerStats(pm[n], allPuzzles), firsts: firsts[n] || 0 }))
     .sort((a, b) => {
@@ -1164,8 +1210,9 @@ function filterToDate(ds) {
 }
 
 function renderBoard() {
+  const src = getFilteredStore();
   const pm = {};
-  store.forEach(r => { (pm[r.player] = pm[r.player] || []).push(r); });
+  src.forEach(r => { (pm[r.player] = pm[r.player] || []).push(r); });
   const names = Object.keys(pm);
   const el  = document.getElementById('leaderboard');
   const mr  = document.getElementById('metric-row');
@@ -1173,8 +1220,8 @@ function renderBoard() {
     el.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><i class="ti ti-trophy" aria-hidden="true"></i>No results yet.</div>';
     mr.innerHTML = ''; return;
   }
-  const allPuzzles = new Set(store.map(r => r.puzzle)).size;
-  const firsts = computeDailyFirsts();
+  const allPuzzles = new Set(src.map(r => r.puzzle)).size;
+  const firsts = computeDailyFirsts(src);
   const sortBy = document.getElementById('board-sort')?.value || 'wAvg';
   const ranked = names.map(n => ({ name: n, ...playerStats(pm[n], allPuzzles), firsts: firsts[n] || 0 }))
     .sort((a, b) => {
@@ -1191,14 +1238,14 @@ function renderBoard() {
         default:       return (a.wAvg ?? 99) - (b.wAvg ?? 99);
       }
     });
-  const allSolved = store.filter(r => r.guesses !== null);
+  const allSolved = src.filter(r => r.guesses !== null);
   const groupAvg = allSolved.length ? (allSolved.reduce((a, r) => a + r.guesses, 0) / allSolved.length) : null;
 
   mr.innerHTML = `
     <div class="metric"><div class="metric-lbl">Puzzles</div><div class="metric-val">${allPuzzles}</div></div>
     <div class="metric"><div class="metric-lbl">Players</div><div class="metric-val">${names.length}</div></div>
     <div class="metric"><div class="metric-lbl">Group avg</div><div class="metric-val">${groupAvg ? groupAvg.toFixed(2) : '—'}</div></div>
-    <div class="metric"><div class="metric-lbl">X/6 total</div><div class="metric-val">${store.filter(r => r.guesses === null).length}</div></div>
+    <div class="metric"><div class="metric-lbl">X/6 total</div><div class="metric-val">${src.filter(r => r.guesses === null).length}</div></div>
   `;
 
   el.innerHTML = ranked.map((p, i) => {
@@ -1469,6 +1516,8 @@ function updateHistSelect() {
 
   const dl = document.getElementById('roster-datalist');
   dl.innerHTML = [...new Set([...names, ...roster])].sort().map(n => `<option value="${n}">`).join('');
+
+  updatePeriodSelects();
 }
 
 function renderHistory() {
